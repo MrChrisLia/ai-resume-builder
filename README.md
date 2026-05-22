@@ -62,11 +62,6 @@ venv/bin/python app.py
 
 Open [http://localhost:5001](http://localhost:5001) in your browser.
 
-### 5. Share with ngrok (optional)
-
-```bash
-ngrok http 5001
-```
 
 ## Usage
 
