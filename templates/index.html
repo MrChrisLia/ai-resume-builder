@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Resume Builder</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="6" fill="#292524"/>
+        <path d="M7 20L14 8L21 20" stroke="#6ee7b7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9.5 16h9" stroke="#6ee7b7" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>AI Resume Builder</span>
+    </div>
+    <div class="header-actions">
+      <p class="tagline">Powered by Gemini</p>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">☀ Light</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="two-col">
+
+    <!-- ════════════════ LEFT — Profile ════════════════ -->
+    <section class="panel" id="panel-info">
+
+      <div class="panel-header">
+        <h2 class="panel-title"><span class="step-num">1</span> Your Profile</h2>
+      </div>
+
+      <!-- Profile Selector -->
+      <div class="profile-bar">
+        <div class="profile-bar-left">
+          <span class="profile-bar-label">Profile</span>
+          <select id="profile-select" onchange="switchProfile(this.value)"></select>
+        </div>
+        <div class="profile-bar-right">
+          <span class="save-indicator" id="save-indicator">✓ Saved</span>
+          <button class="btn-profile-action" onclick="renameProfile()">Rename</button>
+          <button class="btn-profile-action" onclick="createProfile()">+ New</button>
+          <button class="btn-profile-action" onclick="exportProfileJSON()" title="Download profile as JSON">Export</button>
+          <button class="btn-profile-action danger" onclick="deleteProfile()">Delete</button>
+        </div>
+      </div>
+
+      <!-- Import bar -->
+      <div class="import-bar">
+        <span class="import-label">Import:</span>
+        <button class="btn-import" id="btn-import" onclick="triggerImport()">Resume File</button>
+        <button class="btn-import" onclick="triggerProfileImport()">Profile JSON</button>
+        <span class="import-hint">PDF, DOCX, TXT, MD — AI fills your profile</span>
+        <input type="file" id="import-file-input" accept=".pdf,.docx,.txt,.md" style="display:none" onchange="handleImport(this)">
+        <input type="file" id="profile-json-input" accept=".json" style="display:none" onchange="handleProfileImport(this)">
+      </div>
+
+      <!-- Personal Details -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Personal Details <span class="chevron open">▾</span>
+        </h3>
+        <div class="card-body">
+
+          <!-- Photo upload -->
+          <div class="photo-upload-wrap">
+            <div class="photo-upload-area" id="photo-area" onclick="triggerPhotoUpload()" title="Click to upload photo">
+              <div class="photo-placeholder" id="photo-placeholder">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <span>Add Photo</span>
+                <small>JPG PNG WEBP</small>
+              </div>
+              <img id="photo-preview" class="photo-preview-img hidden" alt="Profile photo">
+            </div>
+            <div class="photo-upload-info">
+              <span class="photo-upload-label">Profile Photo</span>
+              <span class="photo-hint">Optional. Included in PDF and Japanese resume. Passport-style photo recommended.</span>
+              <button class="btn-remove-photo hidden" id="btn-remove-photo" onclick="removePhoto(event)">Remove Photo</button>
+            </div>
+          </div>
+          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
+
+          <div class="field-grid two">
+            <div class="field">
+              <label>Full Name <span class="req">*</span></label>
+              <input type="text" id="name" placeholder="Jane Smith">
+            </div>
+            <div class="field">
+              <label>Email <span class="req">*</span></label>
+              <input type="email" id="email" placeholder="jane@example.com">
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input type="tel" id="phone" placeholder="(555) 123-4567">
+            </div>
+            <div class="field">
+              <label>Location</label>
+              <input type="text" id="location" placeholder="San Francisco, CA">
+            </div>
+            <div class="field">
+              <label>LinkedIn URL</label>
+              <input type="text" id="linkedin" placeholder="linkedin.com/in/janesmith">
+            </div>
+            <div class="field">
+              <label>GitHub / Portfolio</label>
+              <input type="text" id="github" placeholder="github.com/janesmith">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Experience -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Work Experience <span class="chevron open">▾</span>
+        </h3>
+        <div class="card-body">
+          <div id="experience-list"></div>
+          <button class="btn-add" onclick="addExperience()">+ Add Position</button>
+        </div>
+      </div>
+
+      <!-- Education -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Education <span class="chevron open">▾</span>
+        </h3>
+        <div class="card-body">
+          <div id="education-list"></div>
+          <button class="btn-add" onclick="addEducation()">+ Add Education</button>
+        </div>
+      </div>
+
+      <!-- Skills -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Skills <span class="chevron open">▾</span>
+        </h3>
+        <div class="card-body">
+          <p class="card-hint">Group skills by category (e.g. "Languages", "Frameworks", "Tools"). Gemini reorders by job relevance.</p>
+          <div id="skills-list"></div>
+          <button class="btn-add" onclick="addSkillCategory()">+ Add Category</button>
+        </div>
+      </div>
+
+      <!-- Languages -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Languages <span class="chevron open">▾</span>
+        </h3>
+        <div class="card-body">
+          <p class="card-hint">Human languages you speak. Gemini includes these when relevant to the role.</p>
+          <div id="languages-list"></div>
+          <button class="btn-add" onclick="addLanguage()">+ Add Language</button>
+        </div>
+      </div>
+
+      <!-- Projects -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Projects <span class="optional">(optional)</span>
+          <span class="chevron">▾</span>
+        </h3>
+        <div class="card-body collapsed">
+          <div id="projects-list"></div>
+          <button class="btn-add" onclick="addProject()">+ Add Project</button>
+        </div>
+      </div>
+
+      <!-- Certifications -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Certifications <span class="optional">(optional)</span>
+          <span class="chevron">▾</span>
+        </h3>
+        <div class="card-body collapsed">
+          <div id="certs-list"></div>
+          <button class="btn-add" onclick="addCert()">+ Add Certification</button>
+        </div>
+      </div>
+
+      <!-- Additional Information -->
+      <div class="card">
+        <h3 class="card-title toggle" onclick="toggleCard(this)">
+          Additional Information <span class="optional">(optional)</span>
+          <span class="chevron">▾</span>
+        </h3>
+        <div class="card-body collapsed">
+          <p class="card-hint">Awards, publications, volunteer work, hobbies, etc. Gemini decides what's relevant.</p>
+          <textarea id="extra-info" rows="5" placeholder="e.g. Eagle Scout, published paper on X, volunteered at Y, open source contributor to Z..."></textarea>
+        </div>
+      </div>
+
+    </section><!-- /panel-info -->
+
+
+    <!-- ════════════════ RIGHT — Job & Generate ════════════════ -->
+    <section class="panel" id="panel-job">
+
+      <div class="panel-header">
+        <h2 class="panel-title"><span class="step-num">2</span> Job &amp; Generate</h2>
+      </div>
+
+      <!-- Job Description -->
+      <div class="card">
+        <h3 class="card-title">Paste the Job Posting</h3>
+        <p class="card-hint">Include the full job description. Gemini reads it to tailor your resume — and rates how well you match.</p>
+        <textarea id="job-description" rows="12" placeholder="Paste the full job description here..."></textarea>
+      </div>
+
+      <!-- Template Selector -->
+      <div class="card">
+        <h3 class="card-title">Resume Template</h3>
+        <div class="template-grid">
+          <div class="template-card selected" data-template="modern" onclick="selectTemplate('modern', this)">
+            <div class="template-thumb">
+              <div class="thumb-line accent" style="width:55%"></div>
+              <div class="thumb-line short"></div>
+              <div class="thumb-line divider"></div>
+              <div class="thumb-line"></div>
+              <div class="thumb-line short"></div>
+              <div class="thumb-line" style="width:80%"></div>
+              <div class="thumb-line divider"></div>
+              <div class="thumb-line"></div>
+              <div class="thumb-line short"></div>
+            </div>
+            <div class="template-name">Modern</div>
+            <div class="template-desc">Clean, ATS-friendly</div>
+          </div>
+
+          <div class="template-card" data-template="classic" onclick="selectTemplate('classic', this)">
+            <div class="template-thumb" style="align-items:center">
+              <div class="thumb-line" style="width:50%"></div>
+              <div class="thumb-line short" style="width:35%"></div>
+              <div class="thumb-line divider" style="width:100%"></div>
+              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+              <div class="thumb-line short" style="align-self:flex-start"></div>
+              <div class="thumb-line" style="align-self:flex-start;width:85%"></div>
+              <div class="thumb-line divider" style="width:100%"></div>
+              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+            </div>
+            <div class="template-name">Classic</div>
+            <div class="template-desc">Traditional serif</div>
+          </div>
+
+          <div class="template-card" data-template="minimal" onclick="selectTemplate('minimal', this)">
+            <div class="template-thumb">
+              <div class="thumb-line" style="width:45%"></div>
+              <div class="thumb-line xshort"></div>
+              <div class="thumb-line" style="margin-top:4px"></div>
+              <div class="thumb-line short"></div>
+              <div class="thumb-line" style="width:85%"></div>
+              <div class="thumb-line" style="margin-top:4px"></div>
+              <div class="thumb-line short"></div>
+            </div>
+            <div class="template-name">Minimal</div>
+            <div class="template-desc">Ultra-clean</div>
+          </div>
+
+          <div class="template-card" data-template="japanese" onclick="selectTemplate('japanese', this)">
+            <div class="template-thumb" style="align-items:center">
+              <div class="thumb-line" style="width:60%"></div>
+              <div class="thumb-line" style="width:70%"></div>
+              <div class="thumb-line divider" style="width:100%"></div>
+              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+              <div class="thumb-line short" style="align-self:flex-start"></div>
+              <div class="thumb-line" style="align-self:flex-start;width:85%"></div>
+              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+            </div>
+            <div class="template-name">Japanese</div>
+            <div class="template-desc">職務経歴書</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: Analyze Fit -->
+      <button class="btn-generate" id="btn-fit" onclick="analyzeFit()">
+        <span id="btn-fit-text">Check Job Fit</span>
+        <span id="btn-fit-spinner" class="spinner hidden"></span>
+      </button>
+
+      <!-- Error -->
+      <div id="error-msg" class="error-msg hidden"></div>
+
+      <!-- Fit Score Card -->
+      <div id="fit-card" class="card fit-card hidden">
+        <h3 class="card-title">Job Fit Analysis</h3>
+        <div class="fit-score-row">
+          <div class="fit-score-circle" id="fit-circle">
+            <span id="fit-score-num">—</span>
+            <span class="fit-score-denom">/ 10</span>
+          </div>
+          <div class="fit-details">
+            <div class="fit-verdict" id="fit-verdict"></div>
+            <p class="fit-summary" id="fit-summary"></p>
+          </div>
+        </div>
+        <div class="fit-sections" id="fit-sections"></div>
+      </div>
+
+      <!-- Step 2: Generate (revealed after fit) -->
+      <div id="generate-section" class="hidden">
+
+        <!-- Output Formats -->
+        <div class="card">
+          <h3 class="card-title">Output Formats</h3>
+          <div class="format-options">
+            <label class="format-label">
+              <input type="checkbox" id="fmt-docx" checked>
+              <span class="format-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                .docx
+              </span>
+            </label>
+            <label class="format-label">
+              <input type="checkbox" id="fmt-pdf" checked>
+              <span class="format-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                .pdf
+              </span>
+            </label>
+            <label class="format-label">
+              <input type="checkbox" id="fmt-md">
+              <span class="format-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="9" y2="17"/><polyline points="9 13 12 16 15 13"/><line x1="15" y1="13" x2="15" y2="17"/></svg>
+                .md
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate btn-generate-resume" id="btn-generate" onclick="generateResume()">
+          <span id="btn-text">Generate Tailored Resume</span>
+          <span id="btn-spinner" class="spinner hidden"></span>
+        </button>
+
+        <button class="btn-generate btn-cover-letter hidden" id="btn-cover-letter" onclick="generateCoverLetter()">
+          <span id="btn-cl-text">Generate Cover Letter</span>
+          <span id="btn-cl-spinner" class="spinner hidden"></span>
+        </button>
+
+        <button class="btn-generate btn-interview hidden" id="btn-interview" onclick="generateInterviewPrep()">
+          <span id="btn-ip-text">Generate Interview Prep</span>
+          <span id="btn-ip-spinner" class="spinner hidden"></span>
+        </button>
+      </div>
+
+      <!-- Resume Results -->
+      <div id="results" class="results hidden">
+        <h3 class="results-title">Your resume is ready!</h3>
+        <div id="download-links" class="download-links"></div>
+        <div id="preview-box" class="preview-box">
+          <h4>AI-Generated Summary</h4>
+          <p id="preview-summary"></p>
+        </div>
+      </div>
+
+      <!-- Cover Letter Results -->
+      <div id="cl-results" class="results hidden" style="margin-top:12px; border-color:rgba(167,139,250,0.3)">
+        <h3 class="results-title" style="color:#a78bfa">Cover letter ready!</h3>
+        <p class="cover-letter-meta" id="cl-meta"></p>
+        <div id="cl-downloads" class="download-links" style="margin-bottom:12px"></div>
+        <div class="cover-letter-output" id="cl-text"></div>
+      </div>
+
+      <!-- Interview Prep -->
+      <div id="interview-section" class="hidden" style="margin-top:12px">
+        <div class="card">
+          <h3 class="card-title" style="font-size:14px;text-transform:none;letter-spacing:0;cursor:default">
+            🎯 Interview Preparation
+            <button class="btn-profile-action" style="font-size:11px;margin-left:auto" onclick="document.getElementById('interview-section').classList.add('hidden')">✕ Close</button>
+          </h3>
+          <div class="interview-grid" id="interview-grid"></div>
+        </div>
+      </div>
+
+      <!-- Resume History -->
+      <div id="history-section" style="margin-top:12px">
+        <div class="card" id="history-card" style="display:none">
+          <h3 class="card-title" style="font-size:14px;text-transform:none;letter-spacing:0;cursor:default">
+            📁 Resume History
+            <button class="btn-profile-action" style="font-size:11px;margin-left:8px" onclick="clearHistory()">Clear All</button>
+          </h3>
+          <div class="history-grid" id="history-grid"></div>
+        </div>
+      </div>
+
+    </section><!-- /panel-job -->
+  </div><!-- /two-col -->
+
+</main>
+
+<!-- Preview Modal -->
+<div id="preview-modal" class="modal-backdrop hidden" onclick="closePreviewModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Resume Preview</span>
+      <button class="btn-close-modal" onclick="closePreviewModal()">✕</button>
+    </div>
+    <iframe id="preview-iframe" class="modal-iframe" src="about:blank"></iframe>
+  </div>
+</div>
+
+<!-- ─── Hidden templates (cloned by JS) ─── -->
+
+<template id="tpl-experience">
+  <div class="entry-block">
+    <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
+    <div class="field-grid two">
+      <div class="field">
+        <label>Company</label>
+        <input type="text" name="company" placeholder="Acme Corp">
+      </div>
+      <div class="field">
+        <label>Job Title</label>
+        <input type="text" name="title" placeholder="Software Engineer">
+      </div>
+      <div class="field">
+        <label>Start Date</label>
+        <input type="text" name="start_date" placeholder="Jan 2022">
+      </div>
+      <div class="field">
+        <label>End Date</label>
+        <input type="text" name="end_date" placeholder="Present">
+      </div>
+    </div>
+    <div class="field">
+      <label>Responsibilities &amp; Achievements</label>
+      <textarea name="description" rows="4" placeholder="Describe your role, key accomplishments, and impact. Include metrics when possible."></textarea>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-education">
+  <div class="entry-block">
+    <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
+    <div class="field-grid two">
+      <div class="field">
+        <label>School / University / Platform</label>
+        <input type="text" name="school" placeholder="UC Berkeley, Coursera, Udemy…">
+      </div>
+      <div class="field">
+        <label>Graduation / Completion Year</label>
+        <input type="text" name="graduation" placeholder="2020">
+      </div>
+      <div class="field">
+        <label>Degree / Course</label>
+        <input type="text" name="degree" placeholder="Bachelor of Science, Machine Learning…">
+      </div>
+      <div class="field">
+        <label>Field of Study</label>
+        <input type="text" name="field" placeholder="Computer Science">
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-skill-category">
+  <div class="entry-block skill-block">
+    <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
+    <div class="field-grid two">
+      <div class="field">
+        <label>Category</label>
+        <input type="text" name="category" placeholder="Frameworks">
+      </div>
+      <div class="field">
+        <label>Skills (comma-separated)</label>
+        <input type="text" name="items" placeholder="React, Node.js, PostgreSQL">
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-language">
+  <div class="entry-block lang-block">
+    <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
+    <div class="field-grid two">
+      <div class="field">
+        <label>Language</label>
+        <input type="text" name="language" placeholder="Japanese">
+      </div>
+      <div class="field">
+        <label>Proficiency</label>
+        <select name="proficiency">
+          <option value="Native">Native</option>
+          <option value="Fluent">Fluent</option>
+          <option value="Professional">Professional Working</option>
+          <option value="Conversational">Conversational</option>
+          <option value="Basic">Basic</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>Certificate <span class="optional">(optional)</span></label>
+        <input type="text" name="certificate" placeholder="e.g. JLPT N2, DELF B2, HSK 5, Cambridge C1…">
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-project">
+  <div class="entry-block">
+    <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
+    <div class="field-grid two">
+      <div class="field">
+        <label>Project Name</label>
+        <input type="text" name="name" placeholder="Open Source Scheduler">
+      </div>
+      <div class="field">
+        <label>Technologies</label>
+        <input type="text" name="technologies" placeholder="Python, Redis, Docker">
+      </div>
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea name="description" rows="2" placeholder="Brief description of what it does and your role."></textarea>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-cert">
+  <div class="entry-block cert-block">
+    <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
+    <div class="field">
+      <label>Certification</label>
+      <input type="text" name="cert" placeholder="AWS Certified Solutions Architect – Associate (2024)">
+    </div>
+  </div>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
