@@ -14,14 +14,13 @@ An AI-powered resume builder that generates tailored, ATS-optimized resumes, cov
 - **Resume history** — Saves past generations with re-download support
 - **Profile import** — Upload an existing resume (PDF, DOCX, TXT, JSON) to auto-fill your profile
 - **Light / dark mode**
-- **Shareable via ngrok** — Share a live session with anyone over the internet
 
 ## Tech Stack
 
 | Layer | Tech |
 |---|---|
 | Backend | Python, Flask |
-| AI | Google Gemini (`gemini-2.0-flash-lite`) via `google-genai` SDK |
+| AI | Google Gemini (`gemini-3.1-flash-lite`) via `google-genai` SDK |
 | Document generation | `python-docx`, WeasyPrint (HTML → PDF) |
 | PDF parsing | pypdf |
 | Frontend | Vanilla JS, CSS custom properties |
