@@ -789,18 +789,27 @@ function showFitCard(fit) {
   summaryEl.textContent = fit.summary || '';
 
   sectionsEl.innerHTML = '';
-  if (fit.strengths?.length) {
+
+  function _makeList(className, title, items) {
     const div = document.createElement('div');
-    div.className = 'fit-list fit-strengths';
-    div.innerHTML = `<h4>${t('strengths-title')}</h4><ul>${fit.strengths.map(s => `<li>${s}</li>`).join('')}</ul>`;
-    sectionsEl.appendChild(div);
+    div.className = className;
+    const h4 = document.createElement('h4');
+    h4.textContent = title;
+    const ul = document.createElement('ul');
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      ul.appendChild(li);
+    });
+    div.appendChild(h4);
+    div.appendChild(ul);
+    return div;
   }
-  if (fit.gaps?.length) {
-    const div = document.createElement('div');
-    div.className = 'fit-list fit-gaps';
-    div.innerHTML = `<h4>${t('gaps-title')}</h4><ul>${fit.gaps.map(g => `<li>${g}</li>`).join('')}</ul>`;
-    sectionsEl.appendChild(div);
-  }
+
+  if (fit.strengths?.length)
+    sectionsEl.appendChild(_makeList('fit-list fit-strengths', t('strengths-title'), fit.strengths));
+  if (fit.gaps?.length)
+    sectionsEl.appendChild(_makeList('fit-list fit-gaps', t('gaps-title'), fit.gaps));
 
   document.getElementById('fit-card').classList.remove('hidden');
   document.getElementById('fit-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -968,22 +977,53 @@ function renderInterviewPrep(questions) {
     'Growth':      'cat-growth',
   };
 
-  questions.forEach((q, i) => {
-    const cls = catClass[q.category] || 'cat-behavioral';
+  questions.forEach((q) => {
+    const cls  = catClass[q.category] || 'cat-behavioral';
     const item = document.createElement('div');
     item.className = 'interview-item';
-    item.innerHTML = `
-      <div class="interview-header" onclick="toggleInterviewItem(this.parentElement)">
-        <span class="interview-category ${cls}">${q.category}</span>
-        <span class="interview-question">${q.question}</span>
-        <span class="interview-chevron">▾</span>
-      </div>
-      <div class="interview-body">
-        <p class="interview-why"><strong>Why asked:</strong> ${q.why_asked}</p>
-        <ul class="interview-points">
-          ${(q.talking_points || []).map(pt => `<li>${pt}</li>`).join('')}
-        </ul>
-      </div>`;
+
+    const header = document.createElement('div');
+    header.className = 'interview-header';
+    header.onclick = function() { toggleInterviewItem(this.parentElement); };
+
+    const catSpan = document.createElement('span');
+    catSpan.className = `interview-category ${cls}`;
+    catSpan.textContent = q.category || '';
+
+    const qSpan = document.createElement('span');
+    qSpan.className = 'interview-question';
+    qSpan.textContent = q.question || '';
+
+    const chevron = document.createElement('span');
+    chevron.className = 'interview-chevron';
+    chevron.textContent = '▾';
+
+    header.appendChild(catSpan);
+    header.appendChild(qSpan);
+    header.appendChild(chevron);
+
+    const body = document.createElement('div');
+    body.className = 'interview-body';
+
+    const why = document.createElement('p');
+    why.className = 'interview-why';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Why asked: ';
+    why.appendChild(strong);
+    why.appendChild(document.createTextNode(q.why_asked || ''));
+
+    const ul = document.createElement('ul');
+    ul.className = 'interview-points';
+    (q.talking_points || []).forEach(pt => {
+      const li = document.createElement('li');
+      li.textContent = pt;
+      ul.appendChild(li);
+    });
+
+    body.appendChild(why);
+    body.appendChild(ul);
+    item.appendChild(header);
+    item.appendChild(body);
     grid.appendChild(item);
   });
 }
@@ -1056,25 +1096,57 @@ function renderHistory() {
     const div = document.createElement('div');
     div.className = 'history-card';
 
-    const dlButtons = Object.entries(entry.downloads || {})
-      .filter(([fmt]) => fmt !== 'preview')
-      .map(([fmt, url]) => `<a class="btn-history" href="${url}" download>↓ .${fmt}</a>`)
-      .join('');
+    const titleEl = document.createElement('div');
+    titleEl.className = 'history-card-title';
+    titleEl.textContent = entry.profile;
 
-    const previewBtn = entry.downloads?.preview
-      ? `<button class="btn-history" onclick="showPreviewModal('${entry.downloads.preview}')">${t('history-preview')}</button>`
-      : '';
+    const metaEl = document.createElement('div');
+    metaEl.className = 'history-card-meta';
+    metaEl.appendChild(document.createTextNode(entry.job_snippet || ''));
+    metaEl.appendChild(document.createElement('br'));
+    metaEl.appendChild(document.createTextNode(`${t('history-template')} ${entry.template || ''}`));
 
-    div.innerHTML = `
-      <div class="history-card-title">${entry.profile}</div>
-      <div class="history-card-meta">${entry.job_snippet}<br>${t('history-template')} ${entry.template}</div>
-      <div class="history-card-time">${time}</div>
-      <div class="history-card-actions">
-        <button class="btn-history" onclick="redownloadEntry('${entry.id}')">${t('history-redownload')}</button>
-        ${previewBtn}
-        ${dlButtons}
-        <button class="btn-history danger" onclick="deleteHistoryEntry('${entry.id}')">✕</button>
-      </div>`;
+    const timeEl = document.createElement('div');
+    timeEl.className = 'history-card-time';
+    timeEl.textContent = time;
+
+    const actions = document.createElement('div');
+    actions.className = 'history-card-actions';
+
+    const redownloadBtn = document.createElement('button');
+    redownloadBtn.className = 'btn-history';
+    redownloadBtn.textContent = t('history-redownload');
+    redownloadBtn.onclick = () => redownloadEntry(entry.id);
+    actions.appendChild(redownloadBtn);
+
+    if (entry.downloads?.preview) {
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'btn-history';
+      prevBtn.textContent = t('history-preview');
+      const previewUrl = entry.downloads.preview;
+      prevBtn.onclick = () => showPreviewModal(previewUrl);
+      actions.appendChild(prevBtn);
+    }
+
+    Object.entries(entry.downloads || {}).filter(([fmt]) => fmt !== 'preview').forEach(([fmt, url]) => {
+      const a = document.createElement('a');
+      a.className = 'btn-history';
+      a.href = url;
+      a.download = '';
+      a.textContent = `↓ .${fmt}`;
+      actions.appendChild(a);
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-history danger';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => deleteHistoryEntry(entry.id);
+    actions.appendChild(delBtn);
+
+    div.appendChild(titleEl);
+    div.appendChild(metaEl);
+    div.appendChild(timeEl);
+    div.appendChild(actions);
     grid.appendChild(div);
   });
 }

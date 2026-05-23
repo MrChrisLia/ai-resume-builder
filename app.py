@@ -3,11 +3,16 @@ import io
 import re
 import uuid
 import json
+import time as _time
+import logging
+import threading
 import pypdf
 from docx import Document as DocxDocument
 from flask import Flask, render_template, request, jsonify, send_file, abort
 from dotenv import load_dotenv
 from google.genai import errors as genai_errors
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from resume_generator import (generate_resume, analyze_fit, parse_resume_text,
                                generate_cover_letter, generate_interview_prep)
 from document_builder import (build_docx, build_pdf, build_markdown, build_preview_html,
@@ -16,11 +21,68 @@ from document_builder import (build_docx, build_pdf, build_markdown, build_previ
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB upload limit
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    storage_uri='memory://',
+    default_limits=['300 per day', '60 per hour'],
+)
+
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'output')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+VALID_TEMPLATES = frozenset({'modern', 'classic', 'minimal', 'japanese', 'taiwanese'})
+VALID_LANGUAGES  = frozenset({'english', 'japanese', 'taiwanese'})
+
 _SAFE_NAME = re.compile(r'^[a-f0-9_]+\.(docx|pdf|md|html)$')
+
+
+def _v(val, allowed, default):
+    """Return val if it's in the allowed set, else default."""
+    return val if val in allowed else default
+
+
+def _cleanup_output_dir():
+    cutoff = _time.time() - 3600  # 1-hour TTL
+    for fname in os.listdir(OUTPUT_DIR):
+        fpath = os.path.join(OUTPUT_DIR, fname)
+        try:
+            if os.path.isfile(fpath) and os.path.getmtime(fpath) < cutoff:
+                os.unlink(fpath)
+        except Exception:
+            pass
+
+
+def _cleanup_worker():
+    while True:
+        _time.sleep(3600)
+        _cleanup_output_dir()
+
+
+_cleanup_output_dir()
+threading.Thread(target=_cleanup_worker, daemon=True).start()
+
+
+@app.after_request
+def _security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "script-src 'self'; "
+        "frame-src 'self';"
+    )
+    return response
 
 
 def _safe_path(filename):
@@ -68,6 +130,7 @@ def index():
 # ── Import ─────────────────────────────────────────────────────────────────────
 
 @app.route('/import-profile', methods=['POST'])
+@limiter.limit('30 per minute')
 def import_profile():
     try:
         file = request.files.get('file')
@@ -111,19 +174,21 @@ def import_profile():
 
         profile = parse_resume_text(text)
         return jsonify({'success': True, 'profile': profile})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        logger.exception('Unexpected error in import_profile')
+        return jsonify({'error': 'An unexpected error occurred. Please try again.'}), 500
 
 
 # ── Fit analysis ───────────────────────────────────────────────────────────────
 
 @app.route('/analyze-fit', methods=['POST'])
+@limiter.limit('15 per minute')
 def fit():
     data = request.get_json() or {}
     candidate          = data.get('candidate', {})
-    job_description    = data.get('job_description', '').strip()
-    additional_notes   = data.get('additional_notes', '').strip()
-    language           = data.get('language', 'english').strip()
+    job_description    = data.get('job_description', '')[:8000].strip()
+    additional_notes   = data.get('additional_notes', '')[:2000].strip()
+    language           = _v(data.get('language', 'english').strip(), VALID_LANGUAGES, 'english')
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
     try:
@@ -138,14 +203,15 @@ def fit():
 # ── Resume generation ──────────────────────────────────────────────────────────
 
 @app.route('/generate', methods=['POST'])
+@limiter.limit('10 per minute')
 def generate():
     data = request.get_json() or {}
     candidate        = data.get('candidate', {})
-    job_description  = data.get('job_description', '').strip()
-    formats          = data.get('formats', ['docx', 'pdf'])
-    template         = data.get('template', 'modern')
-    language         = data.get('language', 'english').strip()
-    additional_notes = data.get('additional_notes', '').strip()
+    job_description  = data.get('job_description', '')[:8000].strip()
+    formats          = [f for f in data.get('formats', ['docx', 'pdf']) if f in ('docx', 'pdf', 'md')]
+    template         = _v(data.get('template', 'modern'), VALID_TEMPLATES, 'modern')
+    language         = _v(data.get('language', 'english').strip(), VALID_LANGUAGES, 'english')
+    additional_notes = data.get('additional_notes', '')[:2000].strip()
 
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
@@ -194,12 +260,13 @@ def generate():
 # ── Regenerate files from stored resume JSON ───────────────────────────────────
 
 @app.route('/regenerate', methods=['POST'])
+@limiter.limit('15 per minute')
 def regenerate():
     data        = request.get_json() or {}
     resume_data = data.get('resume_data', {})
-    formats     = data.get('formats', ['docx', 'pdf'])
-    template    = data.get('template', 'modern')
-    language    = data.get('language', 'english').strip()
+    formats     = [f for f in data.get('formats', ['docx', 'pdf']) if f in ('docx', 'pdf', 'md')]
+    template    = _v(data.get('template', 'modern'), VALID_TEMPLATES, 'modern')
+    language    = _v(data.get('language', 'english').strip(), VALID_LANGUAGES, 'english')
     if not resume_data: return jsonify({'error': 'No resume data provided'}), 400
 
     fid = _file_id()
@@ -225,16 +292,16 @@ def regenerate():
 # ── Cover letter ───────────────────────────────────────────────────────────────
 
 @app.route('/generate-cover-letter', methods=['POST'])
+@limiter.limit('10 per minute')
 def cover_letter():
     data = request.get_json() or {}
     candidate        = data.get('candidate', {})
-    job_description  = data.get('job_description', '').strip()
+    job_description  = data.get('job_description', '')[:8000].strip()
     resume_data      = data.get('resume_data', {})
-    formats          = data.get('formats', ['docx', 'pdf'])
-    template         = data.get('template', 'modern')
-    additional_notes = data.get('additional_notes', '').strip()
-
-    language         = data.get('language', 'english').strip()
+    formats          = [f for f in data.get('formats', ['docx', 'pdf']) if f in ('docx', 'pdf', 'md')]
+    template         = _v(data.get('template', 'modern'), VALID_TEMPLATES, 'modern')
+    additional_notes = data.get('additional_notes', '')[:2000].strip()
+    language         = _v(data.get('language', 'english').strip(), VALID_LANGUAGES, 'english')
 
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
@@ -269,14 +336,14 @@ def cover_letter():
 # ── Interview prep ─────────────────────────────────────────────────────────────
 
 @app.route('/interview-prep', methods=['POST'])
+@limiter.limit('10 per minute')
 def interview_prep():
     data = request.get_json() or {}
     candidate        = data.get('candidate', {})
-    job_description  = data.get('job_description', '').strip()
-    template         = data.get('template', 'modern')
-    additional_notes = data.get('additional_notes', '').strip()
-
-    language         = data.get('language', 'english').strip()
+    job_description  = data.get('job_description', '')[:8000].strip()
+    template         = _v(data.get('template', 'modern'), VALID_TEMPLATES, 'modern')
+    additional_notes = data.get('additional_notes', '')[:2000].strip()
+    language         = _v(data.get('language', 'english').strip(), VALID_LANGUAGES, 'english')
 
     if not job_description: return jsonify({'error': 'Job description required'}), 400
     try:
@@ -306,4 +373,4 @@ def preview(filename):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true', port=5001)

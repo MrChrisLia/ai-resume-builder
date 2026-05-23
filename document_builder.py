@@ -10,8 +10,21 @@ from docx.shared import Pt, Inches, RGBColor, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from html import escape as _esc
 import weasyprint
 import os
+
+
+def _e(v) -> str:
+    """HTML-escape a value for safe embedding in HTML strings."""
+    return _esc(str(v)) if v else ''
+
+
+def _safe_url_fetcher(url, **kwargs):
+    """Block all external URLs in WeasyPrint — only data: URIs are allowed."""
+    if url.startswith('data:'):
+        return weasyprint.default_url_fetcher(url, **kwargs)
+    raise ValueError(f'External resource blocked for security: {url}')
 
 
 # ── Shared helpers ─────────────────────────────────────────────────────────────
@@ -988,15 +1001,17 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
     is_cjk       = is_japanese or is_taiwanese or is_cjk_lang
     css = _TEMPLATE_CSS.get(template, _TEMPLATE_CSS['modern'])
 
-    contact_parts = [data.get('email',''), data.get('phone',''), data.get('location',''),
-                     data.get('linkedin',''), data.get('github','')]
+    # Validate photo is a data URI to prevent SSRF via WeasyPrint
+    photo = data.get('photo', '')
+    if photo and not photo.startswith('data:image/'):
+        photo = ''
+
+    contact_parts = [_e(data.get('email','')), _e(data.get('phone','')), _e(data.get('location','')),
+                     _e(data.get('linkedin','')), _e(data.get('github',''))]
     sep = '　｜　' if is_cjk else ' &nbsp;|&nbsp; '
     contact_line = sep.join(p for p in contact_parts if p)
 
     sections = []
-
-    photo     = data.get('photo', '')
-    photo_tag = f'<img src="{photo}" style="width:1in;height:1.2in;object-fit:cover;object-position:center top;border:1px solid #ccc;border-radius:3px;flex-shrink:0">' if photo else ''
 
     import datetime
     today = datetime.date.today()
@@ -1006,6 +1021,8 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
         f'border:1px solid #ccc;border-radius:3px;display:block"></div>'
     ) if photo else ''
 
+    name = _e(data.get('name', ''))
+
     if is_japanese:
         date_str = f'作成日：{today.year}年{today.month}月{today.day}日'
         if photo:
@@ -1013,7 +1030,7 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
               <div style="display:flex;align-items:flex-start;gap:20px;margin-bottom:6px">
                 <div style="flex:1;min-width:0;text-align:center">
                   <div class="jp-title">履歴書</div>
-                  <div style="font-size:13pt;font-weight:700;margin:4px 0">{data.get("name","")}</div>
+                  <div style="font-size:13pt;font-weight:700;margin:4px 0">{name}</div>
                   <div style="font-size:9pt;color:#666;margin-bottom:5px">{date_str}</div>
                   <div class="contact">{contact_line}</div>
                 </div>
@@ -1023,7 +1040,7 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
             header = f'''
               <div class="jp-title">履歴書</div>
               <div class="jp-name-row">
-                <span class="jp-name">{data.get("name","")}</span>
+                <span class="jp-name">{name}</span>
                 <span class="jp-date">{date_str}</span>
               </div>
               <div class="contact" style="margin-bottom:10px">{contact_line}</div>'''
@@ -1035,7 +1052,7 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
               <div style="display:flex;align-items:flex-start;gap:20px;margin-bottom:6px">
                 <div style="flex:1;min-width:0;text-align:center">
                   <div class="tw-title">履歷表</div>
-                  <div style="font-size:13pt;font-weight:700;margin:4px 0">{data.get("name","")}</div>
+                  <div style="font-size:13pt;font-weight:700;margin:4px 0">{name}</div>
                   <div style="font-size:9pt;color:#666;margin-bottom:5px">{date_str}</div>
                   <div class="contact">{contact_line}</div>
                 </div>
@@ -1045,14 +1062,14 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
             header = f'''
               <div class="tw-title">履歷表</div>
               <div class="tw-name-row">
-                <span class="tw-name">{data.get("name","")}</span>
+                <span class="tw-name">{name}</span>
                 <span class="tw-date">{date_str}</span>
               </div>
               <div class="contact" style="margin-bottom:10px">{contact_line}</div>'''
         labels = _section_labels(language, 'taiwanese')
     else:
         name_contact = f'''
-          <div class="name">{data.get("name","")}</div>
+          <div class="name">{name}</div>
           <div class="contact">{contact_line}</div>'''
         if photo:
             photo_el = f'<img src="{photo}" style="width:0.9in;height:1.1in;object-fit:cover;object-position:center top;border-radius:4px;flex-shrink:0">'
@@ -1067,7 +1084,7 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
 
     def _summary_sec():
         if not data.get('summary'): return
-        sections.append(f'<div class="section-title">{prefix}{labels["summary"]}</div><p>{data["summary"]}</p>')
+        sections.append(f'<div class="section-title">{prefix}{labels["summary"]}</div><p>{_e(data["summary"])}</p>')
 
     def _experience_sec():
         if not data.get('experience'): return
@@ -1077,12 +1094,15 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
             is_last = (i == len(exps) - 1)
             end_raw = exp.get('end_date', '') or ''
             is_current = not end_raw or end_raw.lower() in ('present', '現在', '至今', '')
-            end = _present_label(language) if is_current else end_raw
-            bullets = ''.join(f'<li>{b}</li>' for b in exp.get('bullets', []))
+            end = _present_label(language) if is_current else _e(end_raw)
+            bullets = ''.join(f'<li>{_e(b)}</li>' for b in exp.get('bullets', []))
+            company = _e(exp.get('company', ''))
+            title   = _e(exp.get('title', ''))
+            start   = _e(exp.get('start_date', ''))
             if is_japanese:
                 exp_html += f'''
-                <div class="company">◆ {exp.get("company","")}　入社</div>
-                <div class="jp-role">職位：{exp.get("title","")}　{exp.get("start_date","")} 〜 {end}</div>
+                <div class="company">◆ {company}　入社</div>
+                <div class="jp-role">職位：{title}　{start} 〜 {end}</div>
                 <ul>{bullets}</ul>'''
                 if not is_current:
                     exp_html += f'<div class="jp-role" style="text-align:right">同社　退職</div>'
@@ -1090,17 +1110,17 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
                     exp_html += f'<div class="jp-role" style="text-align:right">現在に至る</div>'
             elif is_taiwanese:
                 exp_html += f'''
-                <div class="company">◆ {exp.get("company","")}</div>
-                <div class="tw-role">職稱：{exp.get("title","")}　期間：{exp.get("start_date","")} 〜 {end}</div>
+                <div class="company">◆ {company}</div>
+                <div class="tw-role">職稱：{title}　期間：{start} 〜 {end}</div>
                 <ul>{bullets}</ul>'''
             else:
                 exp_html += f'''
                 <div class="entry">
                   <div class="entry-header">
-                    <span class="bold">{exp.get("company","")}</span>
-                    <span class="date">{exp.get("start_date","")} – {end}</span>
+                    <span class="bold">{company}</span>
+                    <span class="date">{start} – {end}</span>
                   </div>
-                  <div class="subtitle">{exp.get("title","")}</div>
+                  <div class="subtitle">{title}</div>
                   <ul>{bullets}</ul>
                 </div>'''
         sections.append(f'<div class="section-title">{prefix}{labels["experience"]}</div>{exp_html}')
@@ -1108,7 +1128,7 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
     def _skills_sec():
         if not data.get('skills'): return
         skill_html = ''.join(
-            f'<p><strong>{c.get("category","")}: </strong>{", ".join(c.get("items",[]))}</p>'
+            f'<p><strong>{_e(c.get("category",""))}: </strong>{", ".join(_e(i) for i in c.get("items",[]))}</p>'
             for c in data['skills']
         )
         sections.append(f'<div class="section-title">{prefix}{labels["skills"]}</div>{skill_html}')
@@ -1118,31 +1138,34 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
         if not langs: return
         if is_cjk:
             def _cjk_lang(l):
-                prof = l.get('proficiency', '')
-                cert = l.get('certificate', '').strip()
-                base = f"・{l['language']}：{prof}" if prof else f"・{l['language']}"
+                prof = _e(l.get('proficiency', ''))
+                cert = _e(l.get('certificate', '').strip())
+                lang_name = _e(l['language'])
+                base = f"・{lang_name}：{prof}" if prof else f"・{lang_name}"
                 return f'<p>{base}{"（" + cert + "）" if cert else ""}</p>'
             lang_html = ''.join(_cjk_lang(l) for l in langs)
         else:
-            lang_html = f'<p>{", ".join(_lang_str(l) for l in langs)}</p>'
+            lang_html = f'<p>{", ".join(_e(_lang_str(l)) for l in langs)}</p>'
         sections.append(f'<div class="section-title">{prefix}{labels["languages"]}</div>{lang_html}')
 
     def _education_sec():
         if not data.get('education'): return
         edu_html = ''
         for edu in data['education']:
-            deg = ', '.join(x for x in [edu.get('degree',''), edu.get('field','')] if x)
-            if edu.get('gpa'): deg += f' | GPA: {edu["gpa"]}'
+            deg = ', '.join(_e(x) for x in [edu.get('degree',''), edu.get('field','')] if x)
+            if edu.get('gpa'): deg += f' | GPA: {_e(edu["gpa"])}'
+            school = _e(edu.get('school', ''))
+            grad   = _e(edu.get('graduation', ''))
             if is_japanese:
-                edu_html += f'<p><strong>{edu.get("school","")}</strong>　{deg}　{edu.get("graduation","")}卒業</p>'
+                edu_html += f'<p><strong>{school}</strong>　{deg}　{grad}卒業</p>'
             elif is_taiwanese:
-                edu_html += f'<p><strong>{edu.get("school","")}</strong>　{deg}　{edu.get("graduation","")}畢業</p>'
+                edu_html += f'<p><strong>{school}</strong>　{deg}　{grad}畢業</p>'
             else:
                 edu_html += f'''
                 <div class="entry">
                   <div class="entry-header">
-                    <span class="bold">{edu.get("school","")}</span>
-                    <span class="date">{edu.get("graduation","")}</span>
+                    <span class="bold">{school}</span>
+                    <span class="date">{grad}</span>
                   </div>
                   <div class="subtitle">{deg}</div>
                 </div>'''
@@ -1152,16 +1175,16 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
         if not data.get('projects'): return
         proj_html = ''
         for proj in data['projects']:
-            tech = f' <span class="tech">({proj["technologies"]})</span>' if proj.get('technologies') else ''
-            proj_html += f'<div class="entry"><p><strong>{proj.get("name","")}</strong>{tech}</p>'
-            if proj.get('description'): proj_html += f'<p>{proj["description"]}</p>'
+            tech = f' <span class="tech">({_e(proj["technologies"])})</span>' if proj.get('technologies') else ''
+            proj_html += f'<div class="entry"><p><strong>{_e(proj.get("name",""))}</strong>{tech}</p>'
+            if proj.get('description'): proj_html += f'<p>{_e(proj["description"])}</p>'
             proj_html += '</div>'
         sections.append(f'<div class="section-title">{prefix}{labels["projects"]}</div>{proj_html}')
 
     def _certs_sec():
         certs = [c for c in data.get('certifications', []) if c]
         if not certs: return
-        cert_html = ''.join(f'<li>{c}</li>' for c in certs)
+        cert_html = ''.join(f'<li>{_e(c)}</li>' for c in certs)
         sections.append(f'<div class="section-title">{prefix}{labels["certifications"]}</div><ul>{cert_html}</ul>')
 
     # ── section order ─────────────────────────────────────────────────────────
@@ -1255,7 +1278,7 @@ def build_cover_letter_pdf(letter_data: dict, candidate: dict, output_path: str)
   {paragraphs}
   <div class="signoff">Sincerely,<div class="sig-name">{candidate.get("name","")}</div></div>
 </body></html>'''
-    weasyprint.HTML(string=html).write_pdf(output_path)
+    weasyprint.HTML(string=html, url_fetcher=_safe_url_fetcher).write_pdf(output_path)
 
 
 def build_cover_letter_md(letter_data: dict, candidate: dict, output_path: str):
@@ -1294,7 +1317,7 @@ def build_docx(data: dict, output_path: str, template: str = 'modern', language:
 
 
 def build_pdf(data: dict, output_path: str, template: str = 'modern', language: str = 'english'):
-    weasyprint.HTML(string=_render_html(data, template, language)).write_pdf(output_path)
+    weasyprint.HTML(string=_render_html(data, template, language), url_fetcher=_safe_url_fetcher).write_pdf(output_path)
 
 
 def build_preview_html(data: dict, output_path: str, template: str = 'modern', language: str = 'english'):
