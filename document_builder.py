@@ -1179,8 +1179,9 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
 <head>
 <meta charset="utf-8">
 <style>
+  @page {{ size: letter; margin: 0; }}
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ padding: 0.5in 0.75in; line-height: 1.4; }}
+  body {{ max-width: 8.5in; margin: 0 auto; padding: 0.5in 0.75in; line-height: 1.4; }}
   .entry {{ margin-bottom: 8px; }}
   {css}
 </style>
