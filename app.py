@@ -184,6 +184,30 @@ def import_profile():
         return jsonify({'error': 'An unexpected error occurred. Please try again.'}), 500
 
 
+# ── Auto-load profile from profiles/ directory ─────────────────────────────────
+
+PROFILES_DIR = os.path.join(os.path.dirname(__file__), 'profiles')
+
+@app.route('/auto-load-profile')
+def auto_load_profile():
+    try:
+        files = sorted(
+            (f for f in os.listdir(PROFILES_DIR) if f.endswith('.json')),
+            key=lambda f: os.path.getmtime(os.path.join(PROFILES_DIR, f)),
+            reverse=True,  # most recently modified first
+        )
+        if not files:
+            return jsonify({'found': False})
+        path = os.path.join(PROFILES_DIR, files[0])
+        with open(path, encoding='utf-8') as fh:
+            profile = json.load(fh)
+        profile_data = profile.get('data', profile)  # handle both export formats
+        return jsonify({'found': True, 'profile': profile_data, 'filename': files[0]})
+    except Exception:
+        logger.exception('Error in auto_load_profile')
+        return jsonify({'found': False})
+
+
 # ── Fit analysis ───────────────────────────────────────────────────────────────
 
 @app.route('/analyze-fit', methods=['POST'])

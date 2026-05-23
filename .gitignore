@@ -12,6 +12,9 @@ venv/
 # Generated output files
 output/
 
+# Personal profile data — never commit
+profiles/
+
 # macOS
 .DS_Store
 

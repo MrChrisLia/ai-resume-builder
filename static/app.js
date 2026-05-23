@@ -1301,6 +1301,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
   renderHistory();
 
+  // Auto-load profile from server-side profiles/ directory if current profile is empty
+  if (!profiles[activeId]?.data?.name) {
+    fetch('/auto-load-profile')
+      .then(r => r.json())
+      .then(data => {
+        if (data.found && data.profile) {
+          _populateForm(data.profile);
+          scheduleSave();
+          console.info(`Auto-loaded profile from profiles/${data.filename}`);
+        }
+      })
+      .catch(() => {});  // silently ignore — auto-load is best-effort
+  }
+
   // Auto-save on any change in profile panel
   document.getElementById('panel-info').addEventListener('input',  scheduleSave);
   document.getElementById('panel-info').addEventListener('change', scheduleSave);
