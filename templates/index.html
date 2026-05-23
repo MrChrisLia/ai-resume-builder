@@ -217,85 +217,6 @@
         <textarea id="job-description" rows="12" placeholder="Paste the full job description here..."></textarea>
       </div>
 
-      <!-- Template Selector -->
-      <div class="card">
-        <h3 class="card-title">Resume Template</h3>
-        <div class="template-grid">
-          <div class="template-card selected" data-template="modern" onclick="selectTemplate('modern', this)">
-            <div class="template-thumb">
-              <div class="thumb-line accent" style="width:55%"></div>
-              <div class="thumb-line short"></div>
-              <div class="thumb-line divider"></div>
-              <div class="thumb-line"></div>
-              <div class="thumb-line short"></div>
-              <div class="thumb-line" style="width:80%"></div>
-              <div class="thumb-line divider"></div>
-              <div class="thumb-line"></div>
-              <div class="thumb-line short"></div>
-            </div>
-            <div class="template-name">Modern</div>
-            <div class="template-desc">Clean, ATS-friendly</div>
-          </div>
-
-          <div class="template-card" data-template="classic" onclick="selectTemplate('classic', this)">
-            <div class="template-thumb" style="align-items:center">
-              <div class="thumb-line" style="width:50%"></div>
-              <div class="thumb-line short" style="width:35%"></div>
-              <div class="thumb-line divider" style="width:100%"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
-              <div class="thumb-line short" style="align-self:flex-start"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:85%"></div>
-              <div class="thumb-line divider" style="width:100%"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
-            </div>
-            <div class="template-name">Classic</div>
-            <div class="template-desc">Traditional serif</div>
-          </div>
-
-          <div class="template-card" data-template="minimal" onclick="selectTemplate('minimal', this)">
-            <div class="template-thumb">
-              <div class="thumb-line" style="width:45%"></div>
-              <div class="thumb-line xshort"></div>
-              <div class="thumb-line" style="margin-top:4px"></div>
-              <div class="thumb-line short"></div>
-              <div class="thumb-line" style="width:85%"></div>
-              <div class="thumb-line" style="margin-top:4px"></div>
-              <div class="thumb-line short"></div>
-            </div>
-            <div class="template-name">Minimal</div>
-            <div class="template-desc">Ultra-clean</div>
-          </div>
-
-          <div class="template-card" data-template="japanese" onclick="selectTemplate('japanese', this)">
-            <div class="template-thumb" style="align-items:center">
-              <div class="thumb-line" style="width:60%"></div>
-              <div class="thumb-line" style="width:70%"></div>
-              <div class="thumb-line divider" style="width:100%"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
-              <div class="thumb-line short" style="align-self:flex-start"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:85%"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
-            </div>
-            <div class="template-name">Japanese</div>
-            <div class="template-desc">履歴書</div>
-          </div>
-
-          <div class="template-card" data-template="taiwanese" onclick="selectTemplate('taiwanese', this)">
-            <div class="template-thumb" style="align-items:center">
-              <div class="thumb-line" style="width:55%"></div>
-              <div class="thumb-line" style="width:65%"></div>
-              <div class="thumb-line divider" style="width:100%"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:88%"></div>
-              <div class="thumb-line short" style="align-self:flex-start"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:82%"></div>
-              <div class="thumb-line" style="align-self:flex-start;width:78%"></div>
-            </div>
-            <div class="template-name">台灣</div>
-            <div class="template-desc">繁體中文履歷表</div>
-          </div>
-        </div>
-      </div>
-
       <!-- Additional notes -->
       <div class="card" style="margin-bottom:0">
         <label class="field-label" for="additional-notes">Anything else we should know before generating?</label>
@@ -355,6 +276,85 @@
                 .md
               </span>
             </label>
+          </div>
+        </div>
+
+        <!-- Template Selector -->
+        <div class="card">
+          <h3 class="card-title">Resume Template</h3>
+          <div class="template-grid">
+            <div class="template-card selected" data-template="modern" onclick="selectTemplate('modern', this)">
+              <div class="template-thumb">
+                <div class="thumb-line accent" style="width:55%"></div>
+                <div class="thumb-line short"></div>
+                <div class="thumb-line divider"></div>
+                <div class="thumb-line"></div>
+                <div class="thumb-line short"></div>
+                <div class="thumb-line" style="width:80%"></div>
+                <div class="thumb-line divider"></div>
+                <div class="thumb-line"></div>
+                <div class="thumb-line short"></div>
+              </div>
+              <div class="template-name">Modern</div>
+              <div class="template-desc">Clean, ATS-friendly</div>
+            </div>
+
+            <div class="template-card" data-template="classic" onclick="selectTemplate('classic', this)">
+              <div class="template-thumb" style="align-items:center">
+                <div class="thumb-line" style="width:50%"></div>
+                <div class="thumb-line short" style="width:35%"></div>
+                <div class="thumb-line divider" style="width:100%"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+                <div class="thumb-line short" style="align-self:flex-start"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:85%"></div>
+                <div class="thumb-line divider" style="width:100%"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+              </div>
+              <div class="template-name">Classic</div>
+              <div class="template-desc">Traditional serif</div>
+            </div>
+
+            <div class="template-card" data-template="minimal" onclick="selectTemplate('minimal', this)">
+              <div class="template-thumb">
+                <div class="thumb-line" style="width:45%"></div>
+                <div class="thumb-line xshort"></div>
+                <div class="thumb-line" style="margin-top:4px"></div>
+                <div class="thumb-line short"></div>
+                <div class="thumb-line" style="width:85%"></div>
+                <div class="thumb-line" style="margin-top:4px"></div>
+                <div class="thumb-line short"></div>
+              </div>
+              <div class="template-name">Minimal</div>
+              <div class="template-desc">Ultra-clean</div>
+            </div>
+
+            <div class="template-card" data-template="japanese" onclick="selectTemplate('japanese', this)">
+              <div class="template-thumb" style="align-items:center">
+                <div class="thumb-line" style="width:60%"></div>
+                <div class="thumb-line" style="width:70%"></div>
+                <div class="thumb-line divider" style="width:100%"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+                <div class="thumb-line short" style="align-self:flex-start"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:85%"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
+              </div>
+              <div class="template-name">Japanese</div>
+              <div class="template-desc">履歴書</div>
+            </div>
+
+            <div class="template-card" data-template="taiwanese" onclick="selectTemplate('taiwanese', this)">
+              <div class="template-thumb" style="align-items:center">
+                <div class="thumb-line" style="width:55%"></div>
+                <div class="thumb-line" style="width:65%"></div>
+                <div class="thumb-line divider" style="width:100%"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:88%"></div>
+                <div class="thumb-line short" style="align-self:flex-start"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:82%"></div>
+                <div class="thumb-line" style="align-self:flex-start;width:78%"></div>
+              </div>
+              <div class="template-name">台灣</div>
+              <div class="template-desc">繁體中文履歷表</div>
+            </div>
           </div>
         </div>
 
