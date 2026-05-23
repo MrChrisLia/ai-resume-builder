@@ -79,7 +79,7 @@ def _security_headers(response):
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data:; "
-        "script-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
         "frame-src 'self';"
     )
     return response
