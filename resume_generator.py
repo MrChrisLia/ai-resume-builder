@@ -166,11 +166,27 @@ Return ONLY valid JSON (no markdown):
 
 def generate_resume(candidate_data: dict, job_description: str, template: str = 'modern', additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
-    is_japanese = template == 'japanese'
-    lang_note = (
-        "\nWrite ALL content in formal Japanese (ですます調). "
-        "Format dates as YYYY年MM月. Use Japanese professional terminology."
-    ) if is_japanese else ''
+    is_japanese  = template == 'japanese'
+    is_taiwanese = template == 'taiwanese'
+    if is_japanese:
+        lang_note = (
+            "\nWrite ALL content in formal Japanese (ですます調) for a 履歴書 (rirekisho) — "
+            "the standard Japanese job application form. "
+            "Section order MUST be: 学歴 (education) → 職歴 (work history) → 免許・資格 → 志望動機 (summary) → 特技・スキル → 語学力 → 主なプロジェクト. "
+            "For work history, use 入社/退職/現在に至る notation. "
+            "For education, use 卒業 notation. "
+            "Format dates as YYYY年MM月. Use formal Japanese business writing."
+        )
+    elif is_taiwanese:
+        lang_note = (
+            "\nWrite ALL content in Traditional Chinese (繁體中文) as used in Taiwan. "
+            "Use Taiwan-standard vocabulary: 軟體 (not 软件), 網路 (not 互聯網), 資訊 (not 信息), "
+            "數位 (not 數字 when meaning digital), 應用程式 (not 应用), 雲端 (not 云). "
+            "Use 至今 for current positions (not 現在 or 至今). "
+            "Format dates as YYYY年MM月. Use formal Taiwanese business writing style (書面語)."
+        )
+    else:
+        lang_note = ''
     notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
 
     prompt = f"""You are an expert resume writer and ATS optimization specialist.
@@ -204,14 +220,24 @@ Return empty arrays [] for sections with no data.
 def generate_cover_letter(candidate_data: dict, job_description: str,
                            resume_data: dict, template: str = 'modern', additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
-    is_japanese = template == 'japanese'
+    is_japanese  = template == 'japanese'
+    is_taiwanese = template == 'taiwanese'
 
     if is_japanese:
         style = (
-            "Write a formal Japanese business cover letter (拝啓〜敬具 format). "
-            "Use 敬語 throughout. Address the company as 貴社."
+            "Write a formal Japanese business letter (添え状) to accompany a 履歴書. "
+            "Use 拝啓〜敬具 format. Use 敬語 throughout. Address the company as 貴社. "
+            "Structure: opening pleasantry, motivation for applying, key strengths, closing."
         )
         schema = '{"text": "letter body in Japanese", "job_title": "役職名", "company": "会社名"}'
+    elif is_taiwanese:
+        style = (
+            "Write a formal Traditional Chinese business cover letter as used in Taiwan. "
+            "Use polite and professional 書面語 throughout. Address the company as 貴公司. "
+            "Structure: opening expressing interest, 2 key achievements, closing with a call to action. "
+            "Use Taiwan-standard vocabulary (繁體中文): 軟體, 網路, 資訊, 應用程式, 雲端, etc."
+        )
+        schema = '{"text": "letter body in Traditional Chinese", "job_title": "職稱", "company": "公司名稱"}'
     else:
         style = (
             "Write a professional 3-4 paragraph cover letter. "
@@ -252,8 +278,14 @@ Use paragraph breaks (double newline) between paragraphs.
 def generate_interview_prep(candidate_data: dict, job_description: str,
                              template: str = 'modern', additional_notes: str = '') -> list:
     candidate_data = _strip_photo(candidate_data)
-    is_japanese = template == 'japanese'
-    lang_note = "Write all questions and answers in Japanese (ですます調)." if is_japanese else ''
+    is_japanese  = template == 'japanese'
+    is_taiwanese = template == 'taiwanese'
+    if is_japanese:
+        lang_note = "Write all questions and answers in Japanese (ですます調)."
+    elif is_taiwanese:
+        lang_note = "Write all questions and answers in Traditional Chinese (繁體中文) as used in Taiwan."
+    else:
+        lang_note = ''
     notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
 
     prompt = f"""You are an expert interview coach. Generate targeted interview preparation.
