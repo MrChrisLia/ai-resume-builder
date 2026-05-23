@@ -950,35 +950,57 @@ def _render_html(data: dict, template: str = 'modern') -> str:
     photo     = data.get('photo', '')
     photo_tag = f'<img src="{photo}" style="width:1in;height:1.2in;object-fit:cover;object-position:center top;border:1px solid #ccc;border-radius:3px;flex-shrink:0">' if photo else ''
 
+    import datetime
+    today = datetime.date.today()
+    _photo_el = (
+        f'<div style="flex-shrink:0;text-align:center">'
+        f'<img src="{photo}" style="width:1in;height:1.25in;object-fit:cover;object-position:center top;'
+        f'border:1px solid #ccc;border-radius:3px;display:block"></div>'
+    ) if photo else ''
+
     if is_japanese:
-        import datetime
-        today = datetime.date.today()
-        jp_text_block = f'''
-          <div class="jp-title">履歴書</div>
-          <div class="jp-name-row">
-            <span class="jp-name">{data.get("name","")}</span>
-            <span class="jp-date">作成日：{today.year}年{today.month}月{today.day}日</span>
-          </div>
-          <div class="contact">{contact_line}</div>'''
+        date_str = f'作成日：{today.year}年{today.month}月{today.day}日'
         if photo:
-            header = f'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">{jp_text_block}{photo_tag}</div>'
+            header = f'''
+              <div style="display:flex;align-items:flex-start;gap:20px;margin-bottom:6px">
+                <div style="flex:1;min-width:0;text-align:center">
+                  <div class="jp-title">履歴書</div>
+                  <div style="font-size:13pt;font-weight:700;margin:4px 0">{data.get("name","")}</div>
+                  <div style="font-size:9pt;color:#666;margin-bottom:5px">{date_str}</div>
+                  <div class="contact">{contact_line}</div>
+                </div>
+                {_photo_el}
+              </div>'''
         else:
-            header = jp_text_block
+            header = f'''
+              <div class="jp-title">履歴書</div>
+              <div class="jp-name-row">
+                <span class="jp-name">{data.get("name","")}</span>
+                <span class="jp-date">{date_str}</span>
+              </div>
+              <div class="contact" style="margin-bottom:10px">{contact_line}</div>'''
         labels = JP_SECTIONS
     elif is_taiwanese:
-        import datetime
-        today = datetime.date.today()
-        tw_text_block = f'''
-          <div class="tw-title">履歷表</div>
-          <div class="tw-name-row">
-            <span class="tw-name">{data.get("name","")}</span>
-            <span class="tw-date">製作日期：{today.year}年{today.month}月{today.day}日</span>
-          </div>
-          <div class="contact">{contact_line}</div>'''
+        date_str = f'製作日期：{today.year}年{today.month}月{today.day}日'
         if photo:
-            header = f'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">{tw_text_block}{photo_tag}</div>'
+            header = f'''
+              <div style="display:flex;align-items:flex-start;gap:20px;margin-bottom:6px">
+                <div style="flex:1;min-width:0;text-align:center">
+                  <div class="tw-title">履歷表</div>
+                  <div style="font-size:13pt;font-weight:700;margin:4px 0">{data.get("name","")}</div>
+                  <div style="font-size:9pt;color:#666;margin-bottom:5px">{date_str}</div>
+                  <div class="contact">{contact_line}</div>
+                </div>
+                {_photo_el}
+              </div>'''
         else:
-            header = tw_text_block
+            header = f'''
+              <div class="tw-title">履歷表</div>
+              <div class="tw-name-row">
+                <span class="tw-name">{data.get("name","")}</span>
+                <span class="tw-date">{date_str}</span>
+              </div>
+              <div class="contact" style="margin-bottom:10px">{contact_line}</div>'''
         labels = TW_SECTIONS
     else:
         name_contact = f'''
