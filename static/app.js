@@ -5,9 +5,195 @@ const PROFILES_KEY = 'resumeProfiles';
 const ACTIVE_KEY   = 'activeProfileId';
 const HISTORY_KEY  = 'resumeHistory';
 
+// ── UI Translations ───────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    'powered-by': 'Powered by Gemini',
+    'step1-title': ' Your Profile', 'step2-title': ' Job & Generate',
+    'profile-label': 'Profile', 'save-indicator': '✓ Saved',
+    'import-label': 'Import:', 'btn-import': 'Resume File',
+    'btn-profile-json': 'Profile JSON',
+    'import-hint': 'PDF, DOCX, TXT, MD — AI fills your profile',
+    'personal-details': 'Personal Details', 'photo-add': 'Add Photo',
+    'photo-label': 'Profile Photo',
+    'photo-hint-text': 'Optional. Included in PDF and Japanese resume. Passport-style photo recommended.',
+    'remove-photo': 'Remove Photo',
+    'name-label': 'Full Name', 'email-label': 'Email', 'phone-label': 'Phone',
+    'location-label': 'Location', 'linkedin-label': 'LinkedIn URL',
+    'github-label': 'GitHub / Portfolio',
+    'work-exp': 'Work Experience', 'btn-add-exp': '+ Add Position',
+    'education-title': 'Education', 'btn-add-edu': '+ Add Education',
+    'skills-title': 'Skills',
+    'skills-hint': 'Group skills by category (e.g. "Languages", "Frameworks", "Tools"). Gemini reorders by job relevance.',
+    'btn-add-skill': '+ Add Category',
+    'languages-title': 'Languages',
+    'languages-hint': 'Human languages you speak. Gemini includes these when relevant to the role.',
+    'btn-add-lang': '+ Add Language',
+    'projects-title': 'Projects', 'btn-add-proj': '+ Add Project',
+    'optional': '(optional)',
+    'certs-title': 'Certifications / Professional Licenses',
+    'btn-add-cert': '+ Add Certification',
+    'extra-info-title': 'Additional Information',
+    'extra-info-hint': "Awards, publications, volunteer work, hobbies, etc. Gemini decides what's relevant.",
+    'extra-info-placeholder': 'e.g. Eagle Scout, published paper on X, volunteered at Y, open source contributor to Z...',
+    'job-posting-title': 'Paste the Job Posting',
+    'job-posting-hint': 'Include the full job description. Gemini reads it to tailor your resume — and rates how well you match.',
+    'jd-placeholder': 'Paste the full job description here...',
+    'additional-notes-label': 'Anything else we should know before generating?',
+    'notes-placeholder': "e.g. I'm open to relocation, targeting a senior role, prefer not to mention my gap year, emphasize leadership over technical skills…",
+    'btn-fit-text': 'Check Job Fit', 'fit-card-title': 'Job Fit Analysis',
+    'strengths-title': 'Strengths', 'gaps-title': 'Gaps / Areas to Address',
+    'output-formats-title': 'Output Formats', 'template-title': 'Resume Template',
+    'lang-selector-title': 'Content Language',
+    'lang-selector-hint': 'The language Gemini writes the resume in — independent of the visual template.',
+    'tmpl-modern-name': 'Modern', 'tmpl-modern-desc': 'Clean, ATS-friendly',
+    'tmpl-classic-name': 'Classic', 'tmpl-classic-desc': 'Traditional serif',
+    'tmpl-minimal-name': 'Minimal', 'tmpl-minimal-desc': 'Ultra-clean',
+    'btn-generate-text': 'Generate Tailored Resume',
+    'btn-cl-text': 'Generate Cover Letter', 'btn-ip-text': 'Generate Interview Prep',
+    'results-title': 'Your resume is ready!', 'cl-results-title': 'Cover letter ready!',
+    'interview-title': '🎯 Interview Preparation', 'interview-close': '✕ Close',
+    'history-title': '📁 Resume History', 'btn-clear-all': 'Clear All',
+    'btn-rename': 'Rename', 'btn-new-profile': '+ New',
+    'btn-export': 'Export', 'btn-delete': 'Delete',
+    'preview-modal-title': 'Resume Preview',
+    'analyzing': 'Analyzing…', 'generating': 'Generating…', 'importing': 'Importing…',
+    'history-redownload': '↻ Re-download', 'history-preview': '👁 Preview',
+    'history-template': 'Template:',
+    'clear-history-confirm': 'Clear all resume history?',
+    'delete-profile-confirm': 'Delete "{name}"? This cannot be undone.',
+    'err-no-name': 'Please enter your full name.',
+    'err-no-job': 'Please paste the job description.',
+    'err-no-format': 'Select at least one output format.',
+    'err-import-json': 'Could not parse JSON file.',
+    'err-import-prefix': 'Import failed: ',
+  },
+  ja: {
+    'powered-by': 'Gemini搭載',
+    'step1-title': ' プロフィール', 'step2-title': ' 求人・生成',
+    'profile-label': 'プロフィール', 'save-indicator': '✓ 保存済み',
+    'import-label': 'インポート:', 'btn-import': '履歴書ファイル',
+    'btn-profile-json': 'プロフィールJSON',
+    'import-hint': 'PDF・DOCX・TXT・MD — AIがプロフィールを入力',
+    'personal-details': '個人情報', 'photo-add': '写真追加',
+    'photo-label': 'プロフィール写真',
+    'photo-hint-text': '任意。PDFと履歴書に含まれます。証明写真推奨。',
+    'remove-photo': '写真を削除',
+    'name-label': '氏名', 'email-label': 'メールアドレス', 'phone-label': '電話番号',
+    'location-label': '住所', 'linkedin-label': 'LinkedIn URL',
+    'github-label': 'GitHub / ポートフォリオ',
+    'work-exp': '職務経歴', 'btn-add-exp': '＋職歴を追加',
+    'education-title': '学歴', 'btn-add-edu': '＋学歴を追加',
+    'skills-title': 'スキル',
+    'skills-hint': 'カテゴリ別にグループ化（例：言語、フレームワーク、ツール）。Geminiが関連度順に並び替えます。',
+    'btn-add-skill': '＋カテゴリを追加',
+    'languages-title': '語学',
+    'languages-hint': '話せる言語を入力してください。Geminiが役割に応じて含めます。',
+    'btn-add-lang': '＋言語を追加',
+    'projects-title': 'プロジェクト', 'btn-add-proj': '＋プロジェクトを追加',
+    'optional': '（任意）',
+    'certs-title': '資格・免許', 'btn-add-cert': '＋資格を追加',
+    'extra-info-title': 'その他',
+    'extra-info-hint': '受賞歴、出版物、ボランティア、趣味など。Geminiが関連性を判断します。',
+    'extra-info-placeholder': '例：受賞歴、論文発表、ボランティア活動、オープンソース貢献...',
+    'job-posting-title': '求人票を貼り付け',
+    'job-posting-hint': '求人票の全文を貼り付けてください。Geminiが履歴書をカスタマイズし、マッチ度を評価します。',
+    'jd-placeholder': '求人票の全文をここに貼り付けてください...',
+    'additional-notes-label': '生成前に伝えておきたいことはありますか？',
+    'notes-placeholder': '例：転勤可、シニアポジション希望、ギャップイヤーは触れないで、リーダーシップを強調して...',
+    'btn-fit-text': '適性チェック', 'fit-card-title': '適性分析',
+    'strengths-title': '強み', 'gaps-title': 'ギャップ・改善点',
+    'output-formats-title': '出力形式', 'template-title': '履歴書テンプレート',
+    'lang-selector-title': '生成言語',
+    'lang-selector-hint': 'Geminiが履歴書を生成する言語です（テンプレートに依存しません）。',
+    'tmpl-modern-name': 'モダン', 'tmpl-modern-desc': 'クリーン・ATS対応',
+    'tmpl-classic-name': 'クラシック', 'tmpl-classic-desc': '伝統的セリフ体',
+    'tmpl-minimal-name': 'ミニマル', 'tmpl-minimal-desc': '超シンプル',
+    'btn-generate-text': '履歴書を生成',
+    'btn-cl-text': '送付状を生成', 'btn-ip-text': '面接対策を生成',
+    'results-title': '履歴書が完成しました！', 'cl-results-title': '送付状が完成しました！',
+    'interview-title': '🎯 面接準備', 'interview-close': '✕ 閉じる',
+    'history-title': '📁 履歴書履歴', 'btn-clear-all': 'すべて削除',
+    'btn-rename': '名前変更', 'btn-new-profile': '＋新規',
+    'btn-export': 'エクスポート', 'btn-delete': '削除',
+    'preview-modal-title': 'プレビュー',
+    'analyzing': '分析中…', 'generating': '生成中…', 'importing': 'インポート中…',
+    'history-redownload': '↻ 再ダウンロード', 'history-preview': '👁 プレビュー',
+    'history-template': 'テンプレート:',
+    'clear-history-confirm': '履歴書の履歴をすべて削除しますか？',
+    'delete-profile-confirm': '「{name}」を削除しますか？この操作は元に戻せません。',
+    'err-no-name': '氏名を入力してください。',
+    'err-no-job': '求人票を貼り付けてください。',
+    'err-no-format': '出力形式を1つ以上選択してください。',
+    'err-import-json': 'JSONファイルを解析できませんでした。',
+    'err-import-prefix': 'インポート失敗: ',
+  },
+  tw: {
+    'powered-by': '由 Gemini 驅動',
+    'step1-title': ' 個人資料', 'step2-title': ' 職缺與生成',
+    'profile-label': '資料', 'save-indicator': '✓ 已儲存',
+    'import-label': '匯入：', 'btn-import': '履歷檔案',
+    'btn-profile-json': '資料JSON',
+    'import-hint': 'PDF、DOCX、TXT、MD — AI 自動填寫資料',
+    'personal-details': '個人資料', 'photo-add': '新增照片',
+    'photo-label': '大頭照',
+    'photo-hint-text': '選填。包含於PDF與日式履歷中。建議使用證件照。',
+    'remove-photo': '移除照片',
+    'name-label': '姓名', 'email-label': '電子郵件', 'phone-label': '電話',
+    'location-label': '地址', 'linkedin-label': 'LinkedIn 網址',
+    'github-label': 'GitHub / 作品集',
+    'work-exp': '工作經歷', 'btn-add-exp': '＋新增職位',
+    'education-title': '學歷', 'btn-add-edu': '＋新增學歷',
+    'skills-title': '技能',
+    'skills-hint': '依類別分組（如程式語言、框架、工具）。Gemini 會依職缺相關度排序。',
+    'btn-add-skill': '＋新增類別',
+    'languages-title': '語言',
+    'languages-hint': '您所會的語言。Gemini 會在相關職位中加入這些資訊。',
+    'btn-add-lang': '＋新增語言',
+    'projects-title': '專案', 'btn-add-proj': '＋新增專案',
+    'optional': '（選填）',
+    'certs-title': '證照與專業執照', 'btn-add-cert': '＋新增證照',
+    'extra-info-title': '其他資訊',
+    'extra-info-hint': '獎項、出版物、志工經歷、興趣等。Gemini 會判斷相關性。',
+    'extra-info-placeholder': '例：獲獎紀錄、論文發表、志工服務、開源專案貢獻...',
+    'job-posting-title': '貼上職缺說明',
+    'job-posting-hint': '貼上完整職缺說明。Gemini 將據此客製化您的履歷，並評估符合度。',
+    'jd-placeholder': '在此貼上完整的職缺說明...',
+    'additional-notes-label': '生成前還有什麼需要告訴我們的嗎？',
+    'notes-placeholder': '例：可接受外派、應徵資深職位、不提空窗期、強調領導力而非技術...',
+    'btn-fit-text': '檢查職缺適合度', 'fit-card-title': '職缺適合度分析',
+    'strengths-title': '優勢', 'gaps-title': '落差 / 待加強項目',
+    'output-formats-title': '輸出格式', 'template-title': '履歷範本',
+    'lang-selector-title': '生成語言',
+    'lang-selector-hint': 'Gemini 生成履歷的語言，與版面範本無關。',
+    'tmpl-modern-name': '現代風', 'tmpl-modern-desc': '簡潔，ATS 友善',
+    'tmpl-classic-name': '經典', 'tmpl-classic-desc': '傳統襯線字體',
+    'tmpl-minimal-name': '極簡', 'tmpl-minimal-desc': '超簡約',
+    'btn-generate-text': '生成客製化履歷',
+    'btn-cl-text': '生成求職信', 'btn-ip-text': '生成面試準備資料',
+    'results-title': '您的履歷已完成！', 'cl-results-title': '求職信已完成！',
+    'interview-title': '🎯 面試準備', 'interview-close': '✕ 關閉',
+    'history-title': '📁 履歷紀錄', 'btn-clear-all': '清除全部',
+    'btn-rename': '重新命名', 'btn-new-profile': '＋新增',
+    'btn-export': '匯出', 'btn-delete': '刪除',
+    'preview-modal-title': '履歷預覽',
+    'analyzing': '分析中…', 'generating': '生成中…', 'importing': '匯入中…',
+    'history-redownload': '↻ 重新下載', 'history-preview': '👁 預覽',
+    'history-template': '範本:',
+    'clear-history-confirm': '清除所有履歷紀錄？',
+    'delete-profile-confirm': '刪除「{name}」？此操作無法復原。',
+    'err-no-name': '請輸入您的姓名。',
+    'err-no-job': '請貼上職缺說明。',
+    'err-no-format': '請選擇至少一種輸出格式。',
+    'err-import-json': '無法解析 JSON 檔案。',
+    'err-import-prefix': '匯入失敗：',
+  },
+};
+
 let saveTimer       = null;
 let currentTemplate = 'modern';
 let currentLanguage = 'english';
+let currentUILang   = 'en';
 let _lastResumeData = null; // cached for cover letter & interview prep
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -42,6 +228,31 @@ function selectLanguage(lang, el) {
   currentLanguage = lang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
+}
+
+// ── UI language (i18n) ────────────────────────────────────────────────────────
+
+function t(key) {
+  return (TRANSLATIONS[currentUILang] || TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
+}
+
+function setUILang(lang, el) {
+  currentUILang = lang;
+  localStorage.setItem('uiLang', lang);
+  const htmlEl = document.documentElement;
+  htmlEl.lang = lang === 'ja' ? 'ja' : lang === 'tw' ? 'zh-TW' : 'en';
+
+  document.querySelectorAll('.ui-lang-btn').forEach(b => b.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+
+  document.querySelectorAll('[data-i18n]').forEach(node => {
+    const val = t(node.getAttribute('data-i18n'));
+    if (val) node.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
+    const val = t(node.getAttribute('data-i18n-placeholder'));
+    if (val) node.placeholder = val;
+  });
 }
 
 // ── Profile storage helpers ───────────────────────────────────────────────────
@@ -159,7 +370,7 @@ function deleteProfile() {
     return;
   }
   const profileName = profiles[activeId]?.name || 'this profile';
-  if (!confirm(`Delete "${profileName}"? This cannot be undone.`)) return;
+  if (!confirm(t('delete-profile-confirm').replace('{name}', profileName))) return;
   delete profiles[activeId];
   saveProfiles(profiles);
   const newId = Object.keys(profiles)[0];
@@ -201,7 +412,7 @@ async function handleProfileImport(input) {
     _populateForm(profileData);
     scheduleSave();
   } catch {
-    showError('Could not parse JSON file.');
+    showError(t('err-import-json'));
   }
 }
 
@@ -443,7 +654,7 @@ async function handleImport(input) {
 
   const btn = document.getElementById('btn-import');
   btn.disabled = true;
-  btn.textContent = 'Importing...';
+  btn.textContent = t('importing');
 
   const formData = new FormData();
   formData.append('file', file);
@@ -461,10 +672,10 @@ async function handleImport(input) {
     scheduleSave();
     hideError();
   } catch (err) {
-    showError(`Import failed: ${err.message}`);
+    showError(t('err-import-prefix') + err.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Resume File';
+    btn.textContent = t('btn-import');
   }
 }
 
@@ -474,8 +685,8 @@ async function analyzeFit() {
   const candidate     = collectCandidate();
   const jobDescription = document.getElementById('job-description').value.trim();
 
-  if (!candidate.name) return showError('Please enter your full name.');
-  if (!jobDescription)  return showError('Please paste the job description.');
+  if (!candidate.name) return showError(t('err-no-name'));
+  if (!jobDescription)  return showError(t('err-no-job'));
 
   setFitLoading(true);
   hideError();
@@ -507,7 +718,7 @@ async function analyzeFit() {
 function setFitLoading(on) {
   const btn = document.getElementById('btn-fit');
   btn.disabled = on;
-  document.getElementById('btn-fit-text').textContent = on ? 'Analyzing…' : 'Check Job Fit';
+  document.getElementById('btn-fit-text').textContent = on ? t('analyzing') : t('btn-fit-text');
   document.getElementById('btn-fit-spinner').classList.toggle('hidden', !on);
 }
 
@@ -530,13 +741,13 @@ function showFitCard(fit) {
   if (fit.strengths?.length) {
     const div = document.createElement('div');
     div.className = 'fit-list fit-strengths';
-    div.innerHTML = `<h4>Strengths</h4><ul>${fit.strengths.map(s => `<li>${s}</li>`).join('')}</ul>`;
+    div.innerHTML = `<h4>${t('strengths-title')}</h4><ul>${fit.strengths.map(s => `<li>${s}</li>`).join('')}</ul>`;
     sectionsEl.appendChild(div);
   }
   if (fit.gaps?.length) {
     const div = document.createElement('div');
     div.className = 'fit-list fit-gaps';
-    div.innerHTML = `<h4>Gaps / Areas to Address</h4><ul>${fit.gaps.map(g => `<li>${g}</li>`).join('')}</ul>`;
+    div.innerHTML = `<h4>${t('gaps-title')}</h4><ul>${fit.gaps.map(g => `<li>${g}</li>`).join('')}</ul>`;
     sectionsEl.appendChild(div);
   }
 
@@ -554,7 +765,7 @@ async function generateResume() {
   if (document.getElementById('fmt-pdf').checked)  formats.push('pdf');
   if (document.getElementById('fmt-md').checked)   formats.push('md');
 
-  if (!formats.length) return showError('Select at least one output format.');
+  if (!formats.length) return showError(t('err-no-format'));
 
   setGenLoading(true);
   hideError();
@@ -587,7 +798,7 @@ async function generateResume() {
 function setGenLoading(on) {
   const btn = document.getElementById('btn-generate');
   btn.disabled = on;
-  document.getElementById('btn-text').textContent = on ? 'Generating…' : 'Generate Tailored Resume';
+  document.getElementById('btn-text').textContent = on ? t('generating') : t('btn-generate-text');
   document.getElementById('btn-spinner').classList.toggle('hidden', !on);
 }
 
@@ -601,7 +812,7 @@ async function generateCoverLetter() {
   if (document.getElementById('fmt-pdf').checked)  formats.push('pdf');
   if (document.getElementById('fmt-md').checked)   formats.push('md');
 
-  document.getElementById('btn-cl-text').textContent = 'Generating…';
+  document.getElementById('btn-cl-text').textContent = t('generating');
   document.getElementById('btn-cl-spinner').classList.remove('hidden');
   document.getElementById('btn-cover-letter').disabled = true;
   document.getElementById('cl-results').classList.add('hidden');
@@ -645,7 +856,7 @@ async function generateCoverLetter() {
   } catch (err) {
     showError(err.message);
   } finally {
-    document.getElementById('btn-cl-text').textContent = 'Generate Cover Letter';
+    document.getElementById('btn-cl-text').textContent = t('btn-cl-text');
     document.getElementById('btn-cl-spinner').classList.add('hidden');
     document.getElementById('btn-cover-letter').disabled = false;
   }
@@ -657,7 +868,7 @@ async function generateInterviewPrep() {
   const candidate      = collectCandidate();
   const jobDescription = document.getElementById('job-description').value.trim();
 
-  document.getElementById('btn-ip-text').textContent = 'Generating…';
+  document.getElementById('btn-ip-text').textContent = t('generating');
   document.getElementById('btn-ip-spinner').classList.remove('hidden');
   document.getElementById('btn-interview').disabled = true;
   document.getElementById('interview-section').classList.add('hidden');
@@ -679,7 +890,7 @@ async function generateInterviewPrep() {
   } catch (err) {
     showError(err.message);
   } finally {
-    document.getElementById('btn-ip-text').textContent = 'Generate Interview Prep';
+    document.getElementById('btn-ip-text').textContent = t('btn-ip-text');
     document.getElementById('btn-ip-spinner').classList.add('hidden');
     document.getElementById('btn-interview').disabled = false;
   }
@@ -791,15 +1002,15 @@ function renderHistory() {
       .join('');
 
     const previewBtn = entry.downloads?.preview
-      ? `<button class="btn-history" onclick="showPreviewModal('${entry.downloads.preview}')">👁 Preview</button>`
+      ? `<button class="btn-history" onclick="showPreviewModal('${entry.downloads.preview}')">${t('history-preview')}</button>`
       : '';
 
     div.innerHTML = `
       <div class="history-card-title">${entry.profile}</div>
-      <div class="history-card-meta">${entry.job_snippet}<br>Template: ${entry.template}</div>
+      <div class="history-card-meta">${entry.job_snippet}<br>${t('history-template')} ${entry.template}</div>
       <div class="history-card-time">${time}</div>
       <div class="history-card-actions">
-        <button class="btn-history" onclick="redownloadEntry('${entry.id}')">↻ Re-download</button>
+        <button class="btn-history" onclick="redownloadEntry('${entry.id}')">${t('history-redownload')}</button>
         ${previewBtn}
         ${dlButtons}
         <button class="btn-history danger" onclick="deleteHistoryEntry('${entry.id}')">✕</button>
@@ -845,7 +1056,7 @@ function deleteHistoryEntry(id) {
 }
 
 function clearHistory() {
-  if (!confirm('Clear all resume history?')) return;
+  if (!confirm(t('clear-history-confirm'))) return;
   saveHistory([]);
   renderHistory();
 }
@@ -883,7 +1094,7 @@ function showResults(downloads, resume) {
     if (fmt === 'preview') {
       const btn = document.createElement('button');
       btn.className = 'download-btn';
-      btn.textContent = '👁 Preview';
+      btn.textContent = t('history-preview');
       btn.onclick = () => showPreviewModal(url);
       linksEl.appendChild(btn);
     } else {
@@ -913,6 +1124,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // Restore theme
   const savedTheme = localStorage.getItem('theme') || 'dark';
   applyTheme(savedTheme);
+
+  // Restore UI language
+  const savedUILang = localStorage.getItem('uiLang') || 'en';
+  const uiLangBtn = document.querySelector(`.ui-lang-btn[data-lang="${savedUILang}"]`);
+  setUILang(savedUILang, uiLangBtn);
 
   migrateIfNeeded();
   const activeId = initProfileSelector();

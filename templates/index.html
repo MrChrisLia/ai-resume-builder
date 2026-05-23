@@ -19,7 +19,12 @@
       <span>AI Resume Builder</span>
     </div>
     <div class="header-actions">
-      <p class="tagline">Powered by Gemini</p>
+      <p class="tagline" data-i18n="powered-by">Powered by Gemini</p>
+      <div class="ui-lang-btns">
+        <button class="ui-lang-btn selected" data-lang="en" onclick="setUILang('en',this)">EN</button>
+        <button class="ui-lang-btn" data-lang="ja" onclick="setUILang('ja',this)">日本語</button>
+        <button class="ui-lang-btn" data-lang="tw" onclick="setUILang('tw',this)">繁體中文</button>
+      </div>
       <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">☀ Light</button>
     </div>
   </div>
@@ -32,30 +37,30 @@
     <section class="panel" id="panel-info">
 
       <div class="panel-header">
-        <h2 class="panel-title"><span class="step-num">1</span> Your Profile</h2>
+        <h2 class="panel-title"><span class="step-num">1</span><span data-i18n="step1-title"> Your Profile</span></h2>
       </div>
 
       <!-- Profile Selector -->
       <div class="profile-bar">
         <div class="profile-bar-left">
-          <span class="profile-bar-label">Profile</span>
+          <span class="profile-bar-label" data-i18n="profile-label">Profile</span>
           <select id="profile-select" onchange="switchProfile(this.value)"></select>
         </div>
         <div class="profile-bar-right">
-          <span class="save-indicator" id="save-indicator">✓ Saved</span>
-          <button class="btn-profile-action" onclick="renameProfile()">Rename</button>
-          <button class="btn-profile-action" onclick="createProfile()">+ New</button>
-          <button class="btn-profile-action" onclick="exportProfileJSON()" title="Download profile as JSON">Export</button>
-          <button class="btn-profile-action danger" onclick="deleteProfile()">Delete</button>
+          <span class="save-indicator" id="save-indicator" data-i18n="save-indicator">✓ Saved</span>
+          <button class="btn-profile-action" onclick="renameProfile()" data-i18n="btn-rename">Rename</button>
+          <button class="btn-profile-action" onclick="createProfile()" data-i18n="btn-new-profile">+ New</button>
+          <button class="btn-profile-action" onclick="exportProfileJSON()" title="Download profile as JSON" data-i18n="btn-export">Export</button>
+          <button class="btn-profile-action danger" onclick="deleteProfile()" data-i18n="btn-delete">Delete</button>
         </div>
       </div>
 
       <!-- Import bar -->
       <div class="import-bar">
-        <span class="import-label">Import:</span>
-        <button class="btn-import" id="btn-import" onclick="triggerImport()">Resume File</button>
-        <button class="btn-import" onclick="triggerProfileImport()">Profile JSON</button>
-        <span class="import-hint">PDF, DOCX, TXT, MD — AI fills your profile</span>
+        <span class="import-label" data-i18n="import-label">Import:</span>
+        <button class="btn-import" id="btn-import" onclick="triggerImport()" data-i18n="btn-import">Resume File</button>
+        <button class="btn-import" onclick="triggerProfileImport()" data-i18n="btn-profile-json">Profile JSON</button>
+        <span class="import-hint" data-i18n="import-hint">PDF, DOCX, TXT, MD — AI fills your profile</span>
         <input type="file" id="import-file-input" accept=".pdf,.docx,.txt,.md" style="display:none" onchange="handleImport(this)">
         <input type="file" id="profile-json-input" accept=".json" style="display:none" onchange="handleProfileImport(this)">
       </div>
@@ -63,7 +68,7 @@
       <!-- Personal Details -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Personal Details <span class="chevron open">▾</span>
+          <span data-i18n="personal-details">Personal Details</span> <span class="chevron open">▾</span>
         </h3>
         <div class="card-body">
 
@@ -76,42 +81,42 @@
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                <span>Add Photo</span>
+                <span data-i18n="photo-add">Add Photo</span>
                 <small>JPG PNG WEBP</small>
               </div>
               <img id="photo-preview" class="photo-preview-img hidden" alt="Profile photo">
             </div>
             <div class="photo-upload-info">
-              <span class="photo-upload-label">Profile Photo</span>
-              <span class="photo-hint">Optional. Included in PDF and Japanese resume. Passport-style photo recommended.</span>
-              <button class="btn-remove-photo hidden" id="btn-remove-photo" onclick="removePhoto(event)">Remove Photo</button>
+              <span class="photo-upload-label" data-i18n="photo-label">Profile Photo</span>
+              <span class="photo-hint" data-i18n="photo-hint-text">Optional. Included in PDF and Japanese resume. Passport-style photo recommended.</span>
+              <button class="btn-remove-photo hidden" id="btn-remove-photo" onclick="removePhoto(event)" data-i18n="remove-photo">Remove Photo</button>
             </div>
           </div>
           <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
 
           <div class="field-grid two">
             <div class="field">
-              <label>Full Name <span class="req">*</span></label>
+              <label><span data-i18n="name-label">Full Name</span> <span class="req">*</span></label>
               <input type="text" id="name" placeholder="Jane Smith">
             </div>
             <div class="field">
-              <label>Email <span class="req">*</span></label>
+              <label><span data-i18n="email-label">Email</span> <span class="req">*</span></label>
               <input type="email" id="email" placeholder="jane@example.com">
             </div>
             <div class="field">
-              <label>Phone</label>
+              <label data-i18n="phone-label">Phone</label>
               <input type="tel" id="phone" placeholder="(555) 123-4567">
             </div>
             <div class="field">
-              <label>Location</label>
+              <label data-i18n="location-label">Location</label>
               <input type="text" id="location" placeholder="San Francisco, CA">
             </div>
             <div class="field">
-              <label>LinkedIn URL</label>
+              <label data-i18n="linkedin-label">LinkedIn URL</label>
               <input type="text" id="linkedin" placeholder="linkedin.com/in/janesmith">
             </div>
             <div class="field">
-              <label>GitHub / Portfolio</label>
+              <label data-i18n="github-label">GitHub / Portfolio</label>
               <input type="text" id="github" placeholder="github.com/janesmith">
             </div>
           </div>
@@ -121,82 +126,82 @@
       <!-- Work Experience -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Work Experience <span class="chevron open">▾</span>
+          <span data-i18n="work-exp">Work Experience</span> <span class="chevron open">▾</span>
         </h3>
         <div class="card-body">
           <div id="experience-list"></div>
-          <button class="btn-add" onclick="addExperience()">+ Add Position</button>
+          <button class="btn-add" onclick="addExperience()" data-i18n="btn-add-exp">+ Add Position</button>
         </div>
       </div>
 
       <!-- Education -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Education <span class="chevron open">▾</span>
+          <span data-i18n="education-title">Education</span> <span class="chevron open">▾</span>
         </h3>
         <div class="card-body">
           <div id="education-list"></div>
-          <button class="btn-add" onclick="addEducation()">+ Add Education</button>
+          <button class="btn-add" onclick="addEducation()" data-i18n="btn-add-edu">+ Add Education</button>
         </div>
       </div>
 
       <!-- Skills -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Skills <span class="chevron open">▾</span>
+          <span data-i18n="skills-title">Skills</span> <span class="chevron open">▾</span>
         </h3>
         <div class="card-body">
-          <p class="card-hint">Group skills by category (e.g. "Languages", "Frameworks", "Tools"). Gemini reorders by job relevance.</p>
+          <p class="card-hint" data-i18n="skills-hint">Group skills by category (e.g. "Languages", "Frameworks", "Tools"). Gemini reorders by job relevance.</p>
           <div id="skills-list"></div>
-          <button class="btn-add" onclick="addSkillCategory()">+ Add Category</button>
+          <button class="btn-add" onclick="addSkillCategory()" data-i18n="btn-add-skill">+ Add Category</button>
         </div>
       </div>
 
       <!-- Languages -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Languages <span class="chevron open">▾</span>
+          <span data-i18n="languages-title">Languages</span> <span class="chevron open">▾</span>
         </h3>
         <div class="card-body">
-          <p class="card-hint">Human languages you speak. Gemini includes these when relevant to the role.</p>
+          <p class="card-hint" data-i18n="languages-hint">Human languages you speak. Gemini includes these when relevant to the role.</p>
           <div id="languages-list"></div>
-          <button class="btn-add" onclick="addLanguage()">+ Add Language</button>
+          <button class="btn-add" onclick="addLanguage()" data-i18n="btn-add-lang">+ Add Language</button>
         </div>
       </div>
 
       <!-- Projects -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Projects <span class="optional">(optional)</span>
+          <span data-i18n="projects-title">Projects</span> <span class="optional" data-i18n="optional">(optional)</span>
           <span class="chevron">▾</span>
         </h3>
         <div class="card-body collapsed">
           <div id="projects-list"></div>
-          <button class="btn-add" onclick="addProject()">+ Add Project</button>
+          <button class="btn-add" onclick="addProject()" data-i18n="btn-add-proj">+ Add Project</button>
         </div>
       </div>
 
       <!-- Certifications -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Certifications / Professional Licenses <span class="optional">(optional)</span>
+          <span data-i18n="certs-title">Certifications / Professional Licenses</span> <span class="optional" data-i18n="optional">(optional)</span>
           <span class="chevron">▾</span>
         </h3>
         <div class="card-body collapsed">
           <div id="certs-list"></div>
-          <button class="btn-add" onclick="addCert()">+ Add Certification</button>
+          <button class="btn-add" onclick="addCert()" data-i18n="btn-add-cert">+ Add Certification</button>
         </div>
       </div>
 
       <!-- Additional Information -->
       <div class="card">
         <h3 class="card-title toggle" onclick="toggleCard(this)">
-          Additional Information <span class="optional">(optional)</span>
+          <span data-i18n="extra-info-title">Additional Information</span> <span class="optional" data-i18n="optional">(optional)</span>
           <span class="chevron">▾</span>
         </h3>
         <div class="card-body collapsed">
-          <p class="card-hint">Awards, publications, volunteer work, hobbies, etc. Gemini decides what's relevant.</p>
-          <textarea id="extra-info" rows="5" placeholder="e.g. Eagle Scout, published paper on X, volunteered at Y, open source contributor to Z..."></textarea>
+          <p class="card-hint" data-i18n="extra-info-hint">Awards, publications, volunteer work, hobbies, etc. Gemini decides what's relevant.</p>
+          <textarea id="extra-info" rows="5" data-i18n-placeholder="extra-info-placeholder" placeholder="e.g. Eagle Scout, published paper on X, volunteered at Y, open source contributor to Z..."></textarea>
         </div>
       </div>
 
@@ -207,25 +212,25 @@
     <section class="panel" id="panel-job">
 
       <div class="panel-header">
-        <h2 class="panel-title"><span class="step-num">2</span> Job &amp; Generate</h2>
+        <h2 class="panel-title"><span class="step-num">2</span><span data-i18n="step2-title"> Job &amp; Generate</span></h2>
       </div>
 
       <!-- Job Description -->
       <div class="card">
-        <h3 class="card-title">Paste the Job Posting</h3>
-        <p class="card-hint">Include the full job description. Gemini reads it to tailor your resume — and rates how well you match.</p>
-        <textarea id="job-description" rows="12" placeholder="Paste the full job description here..."></textarea>
+        <h3 class="card-title" data-i18n="job-posting-title">Paste the Job Posting</h3>
+        <p class="card-hint" data-i18n="job-posting-hint">Include the full job description. Gemini reads it to tailor your resume — and rates how well you match.</p>
+        <textarea id="job-description" rows="12" data-i18n-placeholder="jd-placeholder" placeholder="Paste the full job description here..."></textarea>
       </div>
 
       <!-- Additional notes -->
       <div class="card" style="margin-bottom:0">
-        <label class="field-label" for="additional-notes">Anything else we should know before generating?</label>
-        <textarea id="additional-notes" rows="3" placeholder="e.g. I'm open to relocation, targeting a senior role, prefer not to mention my gap year, emphasize leadership over technical skills…" style="width:100%;resize:vertical;margin-top:6px"></textarea>
+        <label class="field-label" for="additional-notes" data-i18n="additional-notes-label">Anything else we should know before generating?</label>
+        <textarea id="additional-notes" rows="3" data-i18n-placeholder="notes-placeholder" placeholder="e.g. I'm open to relocation, targeting a senior role, prefer not to mention my gap year, emphasize leadership over technical skills…" style="width:100%;resize:vertical;margin-top:6px"></textarea>
       </div>
 
       <!-- Step 1: Analyze Fit -->
       <button class="btn-generate" id="btn-fit" onclick="analyzeFit()">
-        <span id="btn-fit-text">Check Job Fit</span>
+        <span id="btn-fit-text" data-i18n="btn-fit-text">Check Job Fit</span>
         <span id="btn-fit-spinner" class="spinner hidden"></span>
       </button>
 
@@ -234,7 +239,7 @@
 
       <!-- Fit Score Card -->
       <div id="fit-card" class="card fit-card hidden">
-        <h3 class="card-title">Job Fit Analysis</h3>
+        <h3 class="card-title" data-i18n="fit-card-title">Job Fit Analysis</h3>
         <div class="fit-score-row">
           <div class="fit-score-circle" id="fit-circle">
             <span id="fit-score-num">—</span>
@@ -253,7 +258,7 @@
 
         <!-- Output Formats -->
         <div class="card">
-          <h3 class="card-title">Output Formats</h3>
+          <h3 class="card-title" data-i18n="output-formats-title">Output Formats</h3>
           <div class="format-options">
             <label class="format-label">
               <input type="checkbox" id="fmt-docx" checked>
@@ -281,7 +286,7 @@
 
         <!-- Template Selector -->
         <div class="card">
-          <h3 class="card-title">Resume Template</h3>
+          <h3 class="card-title" data-i18n="template-title">Resume Template</h3>
           <div class="template-grid">
             <div class="template-card selected" data-template="modern" onclick="selectTemplate('modern', this)">
               <div class="template-thumb">
@@ -295,8 +300,8 @@
                 <div class="thumb-line"></div>
                 <div class="thumb-line short"></div>
               </div>
-              <div class="template-name">Modern</div>
-              <div class="template-desc">Clean, ATS-friendly</div>
+              <div class="template-name" data-i18n="tmpl-modern-name">Modern</div>
+              <div class="template-desc" data-i18n="tmpl-modern-desc">Clean, ATS-friendly</div>
             </div>
 
             <div class="template-card" data-template="classic" onclick="selectTemplate('classic', this)">
@@ -310,8 +315,8 @@
                 <div class="thumb-line divider" style="width:100%"></div>
                 <div class="thumb-line" style="align-self:flex-start;width:90%"></div>
               </div>
-              <div class="template-name">Classic</div>
-              <div class="template-desc">Traditional serif</div>
+              <div class="template-name" data-i18n="tmpl-classic-name">Classic</div>
+              <div class="template-desc" data-i18n="tmpl-classic-desc">Traditional serif</div>
             </div>
 
             <div class="template-card" data-template="minimal" onclick="selectTemplate('minimal', this)">
@@ -324,8 +329,8 @@
                 <div class="thumb-line" style="margin-top:4px"></div>
                 <div class="thumb-line short"></div>
               </div>
-              <div class="template-name">Minimal</div>
-              <div class="template-desc">Ultra-clean</div>
+              <div class="template-name" data-i18n="tmpl-minimal-name">Minimal</div>
+              <div class="template-desc" data-i18n="tmpl-minimal-desc">Ultra-clean</div>
             </div>
 
             <div class="template-card" data-template="japanese" onclick="selectTemplate('japanese', this)">
@@ -360,8 +365,8 @@
 
         <!-- Content Language -->
         <div class="card">
-          <h3 class="card-title">Content Language</h3>
-          <p class="card-hint">The language Gemini writes the resume in — independent of the visual template.</p>
+          <h3 class="card-title" data-i18n="lang-selector-title">Content Language</h3>
+          <p class="card-hint" data-i18n="lang-selector-hint">The language Gemini writes the resume in — independent of the visual template.</p>
           <div class="lang-btn-group">
             <button class="lang-btn selected" onclick="selectLanguage('english', this)">English</button>
             <button class="lang-btn" onclick="selectLanguage('japanese', this)">日本語</button>
@@ -370,24 +375,24 @@
         </div>
 
         <button class="btn-generate btn-generate-resume" id="btn-generate" onclick="generateResume()">
-          <span id="btn-text">Generate Tailored Resume</span>
+          <span id="btn-text" data-i18n="btn-generate-text">Generate Tailored Resume</span>
           <span id="btn-spinner" class="spinner hidden"></span>
         </button>
 
         <button class="btn-generate btn-cover-letter hidden" id="btn-cover-letter" onclick="generateCoverLetter()">
-          <span id="btn-cl-text">Generate Cover Letter</span>
+          <span id="btn-cl-text" data-i18n="btn-cl-text">Generate Cover Letter</span>
           <span id="btn-cl-spinner" class="spinner hidden"></span>
         </button>
 
         <button class="btn-generate btn-interview hidden" id="btn-interview" onclick="generateInterviewPrep()">
-          <span id="btn-ip-text">Generate Interview Prep</span>
+          <span id="btn-ip-text" data-i18n="btn-ip-text">Generate Interview Prep</span>
           <span id="btn-ip-spinner" class="spinner hidden"></span>
         </button>
       </div>
 
       <!-- Resume Results -->
       <div id="results" class="results hidden">
-        <h3 class="results-title">Your resume is ready!</h3>
+        <h3 class="results-title" data-i18n="results-title">Your resume is ready!</h3>
         <div id="download-links" class="download-links"></div>
         <div id="preview-box" class="preview-box">
           <h4>AI-Generated Summary</h4>
@@ -397,7 +402,7 @@
 
       <!-- Cover Letter Results -->
       <div id="cl-results" class="results hidden" style="margin-top:12px; border-color:rgba(167,139,250,0.3)">
-        <h3 class="results-title" style="color:#a78bfa">Cover letter ready!</h3>
+        <h3 class="results-title" style="color:#a78bfa" data-i18n="cl-results-title">Cover letter ready!</h3>
         <p class="cover-letter-meta" id="cl-meta"></p>
         <div id="cl-downloads" class="download-links" style="margin-bottom:12px"></div>
         <div class="cover-letter-output" id="cl-text"></div>
@@ -407,8 +412,8 @@
       <div id="interview-section" class="hidden" style="margin-top:12px">
         <div class="card">
           <h3 class="card-title" style="font-size:14px;text-transform:none;letter-spacing:0;cursor:default">
-            🎯 Interview Preparation
-            <button class="btn-profile-action" style="font-size:11px;margin-left:auto" onclick="document.getElementById('interview-section').classList.add('hidden')">✕ Close</button>
+            <span data-i18n="interview-title">🎯 Interview Preparation</span>
+            <button class="btn-profile-action" style="font-size:11px;margin-left:auto" onclick="document.getElementById('interview-section').classList.add('hidden')" data-i18n="interview-close">✕ Close</button>
           </h3>
           <div class="interview-grid" id="interview-grid"></div>
         </div>
@@ -418,8 +423,8 @@
       <div id="history-section" style="margin-top:12px">
         <div class="card" id="history-card" style="display:none">
           <h3 class="card-title" style="font-size:14px;text-transform:none;letter-spacing:0;cursor:default">
-            📁 Resume History
-            <button class="btn-profile-action" style="font-size:11px;margin-left:8px" onclick="clearHistory()">Clear All</button>
+            <span data-i18n="history-title">📁 Resume History</span>
+            <button class="btn-profile-action" style="font-size:11px;margin-left:8px" onclick="clearHistory()" data-i18n="btn-clear-all">Clear All</button>
           </h3>
           <div class="history-grid" id="history-grid"></div>
         </div>
@@ -434,7 +439,7 @@
 <div id="preview-modal" class="modal-backdrop hidden" onclick="closePreviewModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <span class="modal-title">Resume Preview</span>
+      <span class="modal-title" data-i18n="preview-modal-title">Resume Preview</span>
       <button class="btn-close-modal" onclick="closePreviewModal()">✕</button>
     </div>
     <iframe id="preview-iframe" class="modal-iframe" src="about:blank"></iframe>
