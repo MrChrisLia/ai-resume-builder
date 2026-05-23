@@ -33,29 +33,29 @@ def _file_id():
     return uuid.uuid4().hex[:10]
 
 
-def _ai_error(e: Exception) -> tuple[str, int]:
-    """Translate a Gemini API exception into a user-friendly (message, http_status) tuple."""
+def _ai_error(e: Exception) -> tuple[str, int, int | None]:
+    """Translate a Gemini API exception into a (message, http_status, retry_after_seconds) tuple."""
     if isinstance(e, genai_errors.ClientError):
         code = e.status_code if hasattr(e, 'status_code') else 0
         msg  = str(e)
         if code == 429 or 'RESOURCE_EXHAUSTED' in msg:
-            # Try to extract the retry delay from the error body
             import re as _re
             delay = _re.search(r'retry[^\d]*(\d+)', msg, _re.I)
-            wait  = f' Please wait {delay.group(1)} seconds and try again.' if delay else ' Please wait a moment and try again.'
-            return (f'Gemini API rate limit reached — you exceeded the free-tier quota.{wait}', 429)
+            secs  = int(delay.group(1)) if delay else None
+            wait  = f' Please wait {secs} seconds and try again.' if secs else ' Please wait a moment and try again.'
+            return (f'Gemini quota limit reached — you exceeded the free-tier rate limit.{wait}', 429, secs)
         if code == 400 or 'INVALID_ARGUMENT' in msg:
-            return ('Gemini rejected the request (invalid input). Try shortening the job description.', 400)
+            return ('Gemini rejected the request (invalid input). Try shortening the job description.', 400, None)
         if code == 401 or 'UNAUTHENTICATED' in msg:
-            return ('Gemini API key is invalid or missing. Check your .env file.', 401)
+            return ('Gemini API key is invalid or missing. Check your .env file.', 401, None)
         if code == 403 or 'PERMISSION_DENIED' in msg:
-            return ('Gemini API key does not have permission to use this model.', 403)
+            return ('Gemini API key does not have permission to use this model.', 403, None)
         if code == 404 or 'NOT_FOUND' in msg:
-            return (f'Gemini model not found. Check the model name in resume_generator.py.', 404)
+            return (f'Gemini model not found. Check the model name in resume_generator.py.', 404, None)
         if code == 503 or 'UNAVAILABLE' in msg:
-            return ('Gemini API is temporarily unavailable. Please try again in a few seconds.', 503)
-        return (f'Gemini API error ({code}): {msg[:200]}', 500)
-    return (str(e)[:300], 500)
+            return ('Gemini API is temporarily unavailable. Please try again in a few seconds.', 503, None)
+        return (f'Gemini API error ({code}): {msg[:200]}', 500, None)
+    return (str(e)[:300], 500, None)
 
 
 # ── Pages ──────────────────────────────────────────────────────────────────────
@@ -129,8 +129,10 @@ def fit():
     try:
         return jsonify({'success': True, 'fit': analyze_fit(candidate, job_description, additional_notes, language)})
     except Exception as e:
-        msg, status = _ai_error(e)
-        return jsonify({'error': msg}), status
+        msg, status, retry = _ai_error(e)
+        resp = {'error': msg}
+        if retry: resp['retry_after'] = retry
+        return jsonify(resp), status
 
 
 # ── Resume generation ──────────────────────────────────────────────────────────
@@ -151,8 +153,10 @@ def generate():
     try:
         resume_data = generate_resume(candidate, job_description, template, language, additional_notes)
     except Exception as e:
-        msg, status = _ai_error(e)
-        return jsonify({'error': msg}), status
+        msg, status, retry = _ai_error(e)
+        resp = {'error': msg}
+        if retry: resp['retry_after'] = retry
+        return jsonify(resp), status
 
     # Re-attach photo for document builders (stripped before Gemini call to save tokens)
     if candidate.get('photo'):
@@ -238,8 +242,10 @@ def cover_letter():
     try:
         letter = generate_cover_letter(candidate, job_description, resume_data, template, language, additional_notes)
     except Exception as e:
-        msg, status = _ai_error(e)
-        return jsonify({'error': msg}), status
+        msg, status, retry = _ai_error(e)
+        resp = {'error': msg}
+        if retry: resp['retry_after'] = retry
+        return jsonify(resp), status
 
     fid = _file_id()
     downloads = {}
@@ -277,8 +283,10 @@ def interview_prep():
         questions = generate_interview_prep(candidate, job_description, template, language, additional_notes)
         return jsonify({'success': True, 'questions': questions})
     except Exception as e:
-        msg, status = _ai_error(e)
-        return jsonify({'error': msg}), status
+        msg, status, retry = _ai_error(e)
+        resp = {'error': msg}
+        if retry: resp['retry_after'] = retry
+        return jsonify(resp), status
 
 
 # ── File serving ───────────────────────────────────────────────────────────────

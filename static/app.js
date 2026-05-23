@@ -752,7 +752,10 @@ async function analyzeFit() {
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
-    if (!res.ok || !data.success) throw new Error(data.error || 'Analysis failed.');
+    if (!res.ok || !data.success) {
+      if (data.retry_after) startCountdown(data.retry_after, 'error-msg');
+      throw new Error(data.error || 'Analysis failed.');
+    }
     showFitCard(data.fit);
     document.getElementById('generate-section').classList.remove('hidden');
     document.getElementById('generate-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -827,7 +830,10 @@ async function generateResume() {
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
-    if (!res.ok || !data.success) throw new Error(data.error || 'Generation failed.');
+    if (!res.ok || !data.success) {
+      if (data.retry_after) startCountdown(data.retry_after, 'error-msg-generate');
+      throw new Error(data.error || 'Generation failed.');
+    }
 
     _lastResumeData = data.resume;
     showResults(data.downloads, data.resume);
@@ -882,7 +888,10 @@ async function generateCoverLetter() {
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
-    if (!res.ok || !data.success) throw new Error(data.error || 'Cover letter generation failed.');
+    if (!res.ok || !data.success) {
+      if (data.retry_after) startCountdown(data.retry_after, 'error-msg-generate');
+      throw new Error(data.error || 'Cover letter generation failed.');
+    }
 
     const letter = data.letter;
     document.getElementById('cl-meta').textContent =
@@ -930,7 +939,10 @@ async function generateInterviewPrep() {
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
-    if (!res.ok || !data.success) throw new Error(data.error || 'Failed to generate interview prep.');
+    if (!res.ok || !data.success) {
+      if (data.retry_after) startCountdown(data.retry_after, 'error-msg-generate');
+      throw new Error(data.error || 'Failed to generate interview prep.');
+    }
 
     renderInterviewPrep(data.questions);
     document.getElementById('interview-section').classList.remove('hidden');
@@ -1111,6 +1123,8 @@ function clearHistory() {
 
 // ── Shared UI helpers ─────────────────────────────────────────────────────────
 
+let _countdownTimer = null;
+
 function showError(msg, id = 'error-msg') {
   const el = document.getElementById(id);
   el.textContent = msg;
@@ -1118,7 +1132,29 @@ function showError(msg, id = 'error-msg') {
   if (msg) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function startCountdown(seconds, errorId) {
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+  const el = document.getElementById(errorId);
+  if (!el || seconds <= 0) return;
+  let remaining = seconds;
+  const span = document.createElement('span');
+  span.className = 'retry-countdown';
+  span.textContent = ` — retry in ${remaining}s`;
+  el.appendChild(span);
+  _countdownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(_countdownTimer);
+      _countdownTimer = null;
+      span.remove();
+    } else {
+      span.textContent = ` — retry in ${remaining}s`;
+    }
+  }, 1000);
+}
+
 function hideError(id = null) {
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
   if (id) {
     document.getElementById(id).classList.add('hidden');
   } else {

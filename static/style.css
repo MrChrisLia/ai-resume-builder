@@ -529,6 +529,7 @@ select {
   font-size: 13px;
   margin-bottom: 16px;
 }
+.retry-countdown { font-weight: 700; opacity: 0.85; white-space: nowrap; }
 
 /* ── Results ── */
 .results {
