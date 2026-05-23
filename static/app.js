@@ -469,12 +469,33 @@ function scheduleSave() {
   saveTimer = setTimeout(() => _saveToStorage(getActiveId()), 700);
 }
 
+function _saveProfileToServer(id, profile) {
+  fetch('/save-profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: profile.filename || '', name: profile.name, data: profile.data }),
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res.ok && res.filename && !profile.filename) {
+        // Store the server-assigned filename so future saves hit the same file
+        const profiles = getProfiles();
+        if (profiles[id]) {
+          profiles[id].filename = res.filename;
+          saveProfiles(profiles);
+        }
+      }
+    })
+    .catch(() => {});  // best-effort — localStorage already saved
+}
+
 function _saveToStorage(id) {
   if (!id) return;
   const profiles = getProfiles();
   if (!profiles[id]) return;
   profiles[id].data = collectCandidate();
   saveProfiles(profiles);
+  _saveProfileToServer(id, profiles[id]);
   const indicator = document.getElementById('save-indicator');
   indicator.classList.add('visible');
   clearTimeout(indicator._hideTimer);
@@ -1312,7 +1333,7 @@ window.addEventListener('DOMContentLoaded', () => {
       data.profiles.forEach(sp => {
         if (existingNames.has(sp.name)) return;  // already present — skip
         const id = genId();
-        stored[id] = { name: sp.name, data: sp.profile };
+        stored[id] = { name: sp.name, data: sp.profile, filename: sp.filename };
         added.push(id);
       });
       if (!added.length) return;

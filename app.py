@@ -187,6 +187,41 @@ def import_profile():
 # ── Auto-load profile from profiles/ directory ─────────────────────────────────
 
 PROFILES_DIR = os.path.join(os.path.dirname(__file__), 'profiles')
+os.makedirs(PROFILES_DIR, exist_ok=True)
+
+_SAFE_PROFILE_NAME = re.compile(r'^[a-zA-Z0-9_-]+\.json$')
+
+
+@app.route('/save-profile', methods=['POST'])
+def save_profile():
+    data     = request.get_json() or {}
+    name     = str(data.get('name', '')).strip()[:200]
+    filename = str(data.get('filename', '')).strip()
+    profile  = data.get('data', {})
+
+    if not isinstance(profile, dict):
+        return jsonify({'error': 'invalid profile data'}), 400
+
+    # Derive a safe filename from the profile name when none is provided
+    if not filename:
+        safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', name or 'profile')[:60].strip('_') or 'profile'
+        filename = f'{safe_stem}.json'
+
+    if not _SAFE_PROFILE_NAME.match(filename):
+        return jsonify({'error': 'invalid filename'}), 400
+
+    path = os.path.realpath(os.path.join(PROFILES_DIR, filename))
+    if not path.startswith(os.path.realpath(PROFILES_DIR) + os.sep):
+        return jsonify({'error': 'invalid filename'}), 400
+    try:
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump({'name': name, 'data': profile}, fh, ensure_ascii=False, indent=2)
+    except Exception:
+        logger.exception('Error writing profile file: %s', filename)
+        return jsonify({'error': 'could not save profile'}), 500
+
+    return jsonify({'ok': True, 'filename': filename})
+
 
 @app.route('/auto-load-profile')
 def auto_load_profile():
