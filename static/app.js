@@ -1301,19 +1301,32 @@ window.addEventListener('DOMContentLoaded', () => {
 
   renderHistory();
 
-  // Auto-load profile from server-side profiles/ directory if current profile is empty
-  if (!profiles[activeId]?.data?.name) {
-    fetch('/auto-load-profile')
-      .then(r => r.json())
-      .then(data => {
-        if (data.found && data.profile) {
-          _populateForm(data.profile);
-          scheduleSave();
-          console.info(`Auto-loaded profile from profiles/${data.filename}`);
-        }
-      })
-      .catch(() => {});  // silently ignore — auto-load is best-effort
-  }
+  // Merge profiles from server-side profiles/ directory into localStorage
+  fetch('/auto-load-profile')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.found || !data.profiles?.length) return;
+      const stored = getProfiles();
+      const existingNames = new Set(Object.values(stored).map(p => p.name));
+      let added = [];
+      data.profiles.forEach(sp => {
+        if (existingNames.has(sp.name)) return;  // already present — skip
+        const id = genId();
+        stored[id] = { name: sp.name, data: sp.profile };
+        added.push(id);
+      });
+      if (!added.length) return;
+      saveProfiles(stored);
+      // If the active profile is still the blank default, switch to the first new one
+      const cur = stored[getActiveId()];
+      if (!cur?.data?.name) {
+        setActiveId(added[0]);
+        _populateForm(stored[added[0]].data);
+      }
+      renderProfileSelect();
+      console.info(`Auto-loaded ${added.length} profile(s) from profiles/ directory`);
+    })
+    .catch(() => {});  // silently ignore — auto-load is best-effort
 
   // Auto-save on any change in profile panel
   document.getElementById('panel-info').addEventListener('input',  scheduleSave);

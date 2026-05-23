@@ -197,15 +197,24 @@ def auto_load_profile():
             reverse=True,  # most recently modified first
         )
         if not files:
-            return jsonify({'found': False})
-        path = os.path.join(PROFILES_DIR, files[0])
-        with open(path, encoding='utf-8') as fh:
-            profile = json.load(fh)
-        profile_data = profile.get('data', profile)  # handle both export formats
-        return jsonify({'found': True, 'profile': profile_data, 'filename': files[0]})
+            return jsonify({'found': False, 'profiles': []})
+        profiles = []
+        for fname in files:
+            path = os.path.join(PROFILES_DIR, fname)
+            try:
+                with open(path, encoding='utf-8') as fh:
+                    raw = json.load(fh)
+                profile_data = raw.get('data', raw)
+                # Use name from profile data, fall back to filename
+                name = (profile_data.get('name') or
+                        fname.removesuffix('.json').replace('_', ' ').replace('-', ' ').title())
+                profiles.append({'filename': fname, 'name': name, 'profile': profile_data})
+            except Exception:
+                logger.warning('Could not parse profile file: %s', fname)
+        return jsonify({'found': bool(profiles), 'profiles': profiles})
     except Exception:
         logger.exception('Error in auto_load_profile')
-        return jsonify({'found': False})
+        return jsonify({'found': False, 'profiles': []})
 
 
 # ── Fit analysis ───────────────────────────────────────────────────────────────
