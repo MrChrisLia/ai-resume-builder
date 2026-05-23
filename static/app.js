@@ -7,6 +7,7 @@ const HISTORY_KEY  = 'resumeHistory';
 
 let saveTimer       = null;
 let currentTemplate = 'modern';
+let currentLanguage = 'english';
 let _lastResumeData = null; // cached for cover letter & interview prep
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -32,6 +33,14 @@ function applyTheme(theme) {
 function selectTemplate(name, el) {
   currentTemplate = name;
   document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── Language selector ─────────────────────────────────────────────────────────
+
+function selectLanguage(lang, el) {
+  currentLanguage = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
 }
 
@@ -480,7 +489,7 @@ async function analyzeFit() {
     const res  = await fetch('/analyze-fit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidate, job_description: jobDescription, additional_notes: document.getElementById('additional-notes').value.trim() }),
+      body: JSON.stringify({ candidate, job_description: jobDescription, additional_notes: document.getElementById('additional-notes').value.trim(), language: currentLanguage }),
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
@@ -555,7 +564,7 @@ async function generateResume() {
     const res  = await fetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidate, job_description: jobDescription, formats, template: currentTemplate, additional_notes: document.getElementById('additional-notes').value.trim() }),
+      body: JSON.stringify({ candidate, job_description: jobDescription, formats, template: currentTemplate, language: currentLanguage, additional_notes: document.getElementById('additional-notes').value.trim() }),
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
@@ -608,6 +617,7 @@ async function generateCoverLetter() {
         resume_data: _lastResumeData || {},
         formats,
         template: currentTemplate,
+        language: currentLanguage,
         additional_notes: document.getElementById('additional-notes').value.trim(),
       }),
     });
@@ -657,7 +667,7 @@ async function generateInterviewPrep() {
     const res  = await fetch('/interview-prep', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidate, job_description: jobDescription, template: currentTemplate, additional_notes: document.getElementById('additional-notes').value.trim() }),
+      body: JSON.stringify({ candidate, job_description: jobDescription, template: currentTemplate, language: currentLanguage, additional_notes: document.getElementById('additional-notes').value.trim() }),
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }

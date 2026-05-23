@@ -142,7 +142,7 @@ def _call_text(prompt: str, temperature: float = 0.5) -> str:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def analyze_fit(candidate_data: dict, job_description: str, additional_notes: str = '') -> dict:
+def analyze_fit(candidate_data: dict, job_description: str, additional_notes: str = '', language: str = 'english') -> dict:
     candidate_data = _strip_photo(candidate_data)
     notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
     prompt = f"""You are a senior recruiter. Evaluate how well this candidate matches the job.
@@ -164,10 +164,11 @@ Return ONLY valid JSON (no markdown):
     return _parse_json(_call_json(prompt))
 
 
-def generate_resume(candidate_data: dict, job_description: str, template: str = 'modern', additional_notes: str = '') -> dict:
+def generate_resume(candidate_data: dict, job_description: str, template: str = 'modern',
+                    language: str = 'english', additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
-    is_japanese  = template == 'japanese'
-    is_taiwanese = template == 'taiwanese'
+    is_japanese  = language == 'japanese'
+    is_taiwanese = language == 'taiwanese'
     if is_japanese:
         lang_note = (
             "\nWrite ALL content in formal Japanese (ですます調) for a 履歴書 (rirekisho) — "
@@ -218,10 +219,11 @@ Return empty arrays [] for sections with no data.
 
 
 def generate_cover_letter(candidate_data: dict, job_description: str,
-                           resume_data: dict, template: str = 'modern', additional_notes: str = '') -> dict:
+                           resume_data: dict, template: str = 'modern',
+                           language: str = 'english', additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
-    is_japanese  = template == 'japanese'
-    is_taiwanese = template == 'taiwanese'
+    is_japanese  = language == 'japanese'
+    is_taiwanese = language == 'taiwanese'
 
     if is_japanese:
         style = (
@@ -276,10 +278,11 @@ Use paragraph breaks (double newline) between paragraphs.
 
 
 def generate_interview_prep(candidate_data: dict, job_description: str,
-                             template: str = 'modern', additional_notes: str = '') -> list:
+                             template: str = 'modern', language: str = 'english',
+                             additional_notes: str = '') -> list:
     candidate_data = _strip_photo(candidate_data)
-    is_japanese  = template == 'japanese'
-    is_taiwanese = template == 'taiwanese'
+    is_japanese  = language == 'japanese'
+    is_taiwanese = language == 'taiwanese'
     if is_japanese:
         lang_note = "Write all questions and answers in Japanese (ですます調)."
     elif is_taiwanese:

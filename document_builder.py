@@ -151,6 +151,44 @@ def _add_photo_header(doc, data, name_size, name_color,
             _set_font(p2.add_run(contact), contact_size, color=contact_color, font_name=font_name)
 
 
+# ── Language helpers ───────────────────────────────────────────────────────────
+
+def _present_label(language: str) -> str:
+    if language == 'japanese':  return '現在に至る'
+    if language == 'taiwanese': return '至今'
+    return 'Present'
+
+
+def _section_labels(language: str, template: str = 'modern') -> dict:
+    """Return section heading strings for the given content language."""
+    if language == 'japanese':
+        # JP_SECTIONS / TW_SECTIONS are defined later in this module but resolved at call-time
+        return {
+            'summary': '志望動機', 'experience': '職歴', 'education': '学歴',
+            'skills': '特技・スキル', 'languages': '語学力',
+            'projects': '主なプロジェクト', 'certifications': '免許・資格',
+        }
+    if language == 'taiwanese':
+        return {
+            'summary': '個人簡介', 'experience': '工作經歷', 'education': '學歷',
+            'skills': '專業技能', 'languages': '語言能力',
+            'projects': '專案經歷', 'certifications': '證照與認證',
+        }
+    # English — label set depends on which template format is being used
+    if template == 'japanese':
+        return {
+            'summary': 'Motivation / Summary', 'experience': 'Work History',
+            'education': 'Education', 'skills': 'Special Skills',
+            'languages': 'Languages', 'projects': 'Projects',
+            'certifications': 'Licenses & Certifications',
+        }
+    return {
+        'summary': 'Professional Summary', 'experience': 'Experience',
+        'education': 'Education', 'skills': 'Skills', 'languages': 'Languages',
+        'projects': 'Projects', 'certifications': 'Certifications',
+    }
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  MODERN TEMPLATE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -182,23 +220,24 @@ def _modern_entry_header(doc, left_text, right_text=''):
     return para
 
 
-def _build_modern_docx(data: dict, output_path: str):
+def _build_modern_docx(data: dict, output_path: str, language: str = 'english'):
     doc = Document()
     _set_margins(doc)
     doc.styles['Normal'].paragraph_format.space_after  = Pt(0)
     doc.styles['Normal'].paragraph_format.space_before = Pt(0)
+    lbl = _section_labels(language, 'modern')
 
     _add_photo_header(doc, data, 22, DARK, 9, MID)
 
     if data.get('summary'):
-        _modern_section_heading(doc, 'Professional Summary')
+        _modern_section_heading(doc, lbl['summary'])
         p = doc.add_paragraph(data['summary'])
         p.runs[0].font.size = Pt(10)
 
     if data.get('experience'):
-        _modern_section_heading(doc, 'Experience')
+        _modern_section_heading(doc, lbl['experience'])
         for exp in data['experience']:
-            end = exp.get('end_date') or 'Present'
+            end = exp.get('end_date') or _present_label(language)
             _modern_entry_header(doc, exp.get('company',''), f"{exp.get('start_date','')} – {end}")
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -210,7 +249,7 @@ def _build_modern_docx(data: dict, output_path: str):
                 _set_font(bp.add_run(bullet), 10)
 
     if data.get('education'):
-        _modern_section_heading(doc, 'Education')
+        _modern_section_heading(doc, lbl['education'])
         for edu in data['education']:
             _modern_entry_header(doc, edu.get('school',''), edu.get('graduation',''))
             deg = ', '.join(p for p in [edu.get('degree',''), edu.get('field','')] if p)
@@ -221,7 +260,7 @@ def _build_modern_docx(data: dict, output_path: str):
                 _set_font(p.add_run(deg), 10, italic=True, color=MID)
 
     if data.get('skills'):
-        _modern_section_heading(doc, 'Skills')
+        _modern_section_heading(doc, lbl['skills'])
         for cat in data['skills']:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -230,12 +269,12 @@ def _build_modern_docx(data: dict, output_path: str):
 
     langs = [l for l in data.get('languages', []) if l.get('language')]
     if langs:
-        _modern_section_heading(doc, 'Languages')
+        _modern_section_heading(doc, lbl['languages'])
         p = doc.add_paragraph()
         _set_font(p.add_run(', '.join(_lang_str(l) for l in langs)), 10)
 
     if data.get('projects'):
-        _modern_section_heading(doc, 'Projects')
+        _modern_section_heading(doc, lbl['projects'])
         for proj in data['projects']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -249,7 +288,7 @@ def _build_modern_docx(data: dict, output_path: str):
 
     certs = [c for c in data.get('certifications', []) if c]
     if certs:
-        _modern_section_heading(doc, 'Certifications')
+        _modern_section_heading(doc, lbl['certifications'])
         for cert in certs:
             bp = doc.add_paragraph(style='List Bullet')
             bp.paragraph_format.left_indent = Inches(0.2)
@@ -277,22 +316,23 @@ def _classic_section_heading(doc, title):
     return para
 
 
-def _build_classic_docx(data: dict, output_path: str):
+def _build_classic_docx(data: dict, output_path: str, language: str = 'english'):
     doc = Document()
     _set_margins(doc, top=0.75, bottom=0.75)
     doc.styles['Normal'].paragraph_format.space_after  = Pt(0)
+    lbl = _section_labels(language, 'classic')
 
     _add_photo_header(doc, data, 18, BLK, 10, GRY, font_name='Cambria')
 
     if data.get('summary'):
-        _classic_section_heading(doc, 'Professional Summary')
+        _classic_section_heading(doc, lbl['summary'])
         p = doc.add_paragraph(data['summary'])
         _set_font(p.runs[0], 10, font_name='Cambria')
 
     if data.get('experience'):
-        _classic_section_heading(doc, 'Experience')
+        _classic_section_heading(doc, lbl['experience'])
         for exp in data['experience']:
-            end = exp.get('end_date') or 'Present'
+            end = exp.get('end_date') or _present_label(language)
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(6)
             p.paragraph_format.tab_stops.add_tab_stop(Inches(6.5), WD_TAB_ALIGNMENT.RIGHT)
@@ -308,7 +348,7 @@ def _build_classic_docx(data: dict, output_path: str):
                 _set_font(bp.add_run(f'— {bullet}'), 10, font_name='Cambria')
 
     if data.get('education'):
-        _classic_section_heading(doc, 'Education')
+        _classic_section_heading(doc, lbl['education'])
         for edu in data['education']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -323,7 +363,7 @@ def _build_classic_docx(data: dict, output_path: str):
                 _set_font(p2.add_run(deg), 10, italic=True, font_name='Cambria')
 
     if data.get('skills'):
-        _classic_section_heading(doc, 'Skills')
+        _classic_section_heading(doc, lbl['skills'])
         for cat in data['skills']:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -332,13 +372,13 @@ def _build_classic_docx(data: dict, output_path: str):
 
     langs = [l for l in data.get('languages', []) if l.get('language')]
     if langs:
-        _classic_section_heading(doc, 'Languages')
+        _classic_section_heading(doc, lbl['languages'])
         strs = [_lang_str(l) for l in langs]
         p = doc.add_paragraph()
         _set_font(p.add_run(', '.join(strs)), 10, font_name='Cambria')
 
     if data.get('projects'):
-        _classic_section_heading(doc, 'Projects')
+        _classic_section_heading(doc, lbl['projects'])
         for proj in data['projects']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -352,7 +392,7 @@ def _build_classic_docx(data: dict, output_path: str):
 
     certs = [c for c in data.get('certifications', []) if c]
     if certs:
-        _classic_section_heading(doc, 'Certifications')
+        _classic_section_heading(doc, lbl['certifications'])
         for cert in certs:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(1)
@@ -380,22 +420,23 @@ def _minimal_section_heading(doc, title):
     return para
 
 
-def _build_minimal_docx(data: dict, output_path: str):
+def _build_minimal_docx(data: dict, output_path: str, language: str = 'english'):
     doc = Document()
     _set_margins(doc, left=0.85, right=0.85)
     doc.styles['Normal'].paragraph_format.space_after  = Pt(0)
+    lbl = _section_labels(language, 'minimal')
 
     _add_photo_header(doc, data, 20, DRK2, 9, GR3, center=False)
 
     if data.get('summary'):
-        _minimal_section_heading(doc, 'Summary')
+        _minimal_section_heading(doc, lbl['summary'])
         p = doc.add_paragraph(data['summary'])
         _set_font(p.runs[0], 10, color=GR2)
 
     if data.get('experience'):
-        _minimal_section_heading(doc, 'Experience')
+        _minimal_section_heading(doc, lbl['experience'])
         for exp in data['experience']:
-            end = exp.get('end_date') or 'Present'
+            end = exp.get('end_date') or _present_label(language)
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(6)
             p.paragraph_format.tab_stops.add_tab_stop(Inches(6.2), WD_TAB_ALIGNMENT.RIGHT)
@@ -411,7 +452,7 @@ def _build_minimal_docx(data: dict, output_path: str):
                 _set_font(bp.add_run(f'· {bullet}'), 9.5, color=GR2)
 
     if data.get('education'):
-        _minimal_section_heading(doc, 'Education')
+        _minimal_section_heading(doc, lbl['education'])
         for edu in data['education']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -426,7 +467,7 @@ def _build_minimal_docx(data: dict, output_path: str):
                 _set_font(p2.add_run(deg), 9, color=GR2)
 
     if data.get('skills'):
-        _minimal_section_heading(doc, 'Skills')
+        _minimal_section_heading(doc, lbl['skills'])
         for cat in data['skills']:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -435,13 +476,13 @@ def _build_minimal_docx(data: dict, output_path: str):
 
     langs = [l for l in data.get('languages', []) if l.get('language')]
     if langs:
-        _minimal_section_heading(doc, 'Languages')
+        _minimal_section_heading(doc, lbl['languages'])
         strs = [_lang_str(l) for l in langs]
         p = doc.add_paragraph()
         _set_font(p.add_run(', '.join(strs)), 9.5, color=GR2)
 
     if data.get('projects'):
-        _minimal_section_heading(doc, 'Projects')
+        _minimal_section_heading(doc, lbl['projects'])
         for proj in data['projects']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -455,7 +496,7 @@ def _build_minimal_docx(data: dict, output_path: str):
 
     certs = [c for c in data.get('certifications', []) if c]
     if certs:
-        _minimal_section_heading(doc, 'Certifications')
+        _minimal_section_heading(doc, lbl['certifications'])
         for cert in certs:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -494,7 +535,7 @@ def _jp_section_heading(doc, title):
     return para
 
 
-def _build_japanese_docx(data: dict, output_path: str):
+def _build_japanese_docx(data: dict, output_path: str, language: str = 'japanese'):
     doc = Document()
     _set_margins(doc, top=0.6, bottom=0.6, left=0.8, right=0.8)
     doc.styles['Normal'].paragraph_format.space_after  = Pt(0)
@@ -569,9 +610,11 @@ def _build_japanese_docx(data: dict, output_path: str):
             cp.paragraph_format.space_after = Pt(10)
             _set_font(cp.add_run(contact), 9, color=JGR, font_name='Yu Gothic')
 
+    lbl = _section_labels(language, 'japanese')
+
     # ── 学歴（履歴書では最初）────────────────────────────────────────────────
     if data.get('education'):
-        _jp_section_heading(doc, JP_SECTIONS['education'])
+        _jp_section_heading(doc, lbl['education'])
         for edu in data['education']:
             deg = '　'.join(x for x in [edu.get('degree',''), edu.get('field','')] if x)
             grad = edu.get('graduation','')
@@ -587,7 +630,7 @@ def _build_japanese_docx(data: dict, output_path: str):
 
     # ── 職歴 ────────────────────────────────────────────────────────────────
     if data.get('experience'):
-        _jp_section_heading(doc, JP_SECTIONS['experience'])
+        _jp_section_heading(doc, lbl['experience'])
         exps = data['experience']
         for i, exp in enumerate(exps):
             is_last = (i == len(exps) - 1)
@@ -618,7 +661,7 @@ def _build_japanese_docx(data: dict, output_path: str):
     # ── 免許・資格 ──────────────────────────────────────────────────────────
     certs = [c for c in data.get('certifications', []) if c]
     if certs:
-        _jp_section_heading(doc, JP_SECTIONS['certifications'])
+        _jp_section_heading(doc, lbl['certifications'])
         for cert in certs:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(1)
@@ -626,13 +669,13 @@ def _build_japanese_docx(data: dict, output_path: str):
 
     # ── 志望動機 ────────────────────────────────────────────────────────────
     if data.get('summary'):
-        _jp_section_heading(doc, JP_SECTIONS['summary'])
+        _jp_section_heading(doc, lbl['summary'])
         p = doc.add_paragraph(data['summary'])
         _set_font(p.runs[0], 10, font_name='Yu Gothic')
 
     # ── 特技・スキル ────────────────────────────────────────────────────────
     if data.get('skills'):
-        _jp_section_heading(doc, JP_SECTIONS['skills'])
+        _jp_section_heading(doc, lbl['skills'])
         for cat in data['skills']:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -642,7 +685,7 @@ def _build_japanese_docx(data: dict, output_path: str):
     # ── 語学力 ──────────────────────────────────────────────────────────────
     langs = [l for l in data.get('languages', []) if l.get('language')]
     if langs:
-        _jp_section_heading(doc, JP_SECTIONS['languages'])
+        _jp_section_heading(doc, lbl['languages'])
         for l in langs:
             prof = l.get('proficiency', '')
             cert = l.get('certificate', '').strip()
@@ -655,7 +698,7 @@ def _build_japanese_docx(data: dict, output_path: str):
 
     # ── 主なプロジェクト ────────────────────────────────────────────────────
     if data.get('projects'):
-        _jp_section_heading(doc, JP_SECTIONS['projects'])
+        _jp_section_heading(doc, lbl['projects'])
         for proj in data['projects']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -701,7 +744,7 @@ def _tw_section_heading(doc, title):
     return para
 
 
-def _build_taiwanese_docx(data: dict, output_path: str):
+def _build_taiwanese_docx(data: dict, output_path: str, language: str = 'taiwanese'):
     doc = Document()
     _set_margins(doc, top=0.6, bottom=0.6, left=0.8, right=0.8)
     doc.styles['Normal'].paragraph_format.space_after = Pt(0)
@@ -774,13 +817,15 @@ def _build_taiwanese_docx(data: dict, output_path: str):
             cp.paragraph_format.space_after = Pt(10)
             _set_font(cp.add_run(contact), 9, color=TWGR, font_name=TW_FONT)
 
+    lbl = _section_labels(language, 'taiwanese')
+
     if data.get('summary'):
-        _tw_section_heading(doc, TW_SECTIONS['summary'])
+        _tw_section_heading(doc, lbl['summary'])
         p = doc.add_paragraph(data['summary'])
         _set_font(p.runs[0], 10, font_name=TW_FONT)
 
     if data.get('experience'):
-        _tw_section_heading(doc, TW_SECTIONS['experience'])
+        _tw_section_heading(doc, lbl['experience'])
         for exp in data['experience']:
             end = exp.get('end_date') or '至今'
             p = doc.add_paragraph()
@@ -796,7 +841,7 @@ def _build_taiwanese_docx(data: dict, output_path: str):
                 _set_font(bp.add_run(f'・{bullet}'), 10, font_name=TW_FONT)
 
     if data.get('skills'):
-        _tw_section_heading(doc, TW_SECTIONS['skills'])
+        _tw_section_heading(doc, lbl['skills'])
         for cat in data['skills']:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(2)
@@ -805,7 +850,7 @@ def _build_taiwanese_docx(data: dict, output_path: str):
 
     langs = [l for l in data.get('languages', []) if l.get('language')]
     if langs:
-        _tw_section_heading(doc, TW_SECTIONS['languages'])
+        _tw_section_heading(doc, lbl['languages'])
         for l in langs:
             prof = l.get('proficiency', '')
             cert = l.get('certificate', '').strip()
@@ -817,7 +862,7 @@ def _build_taiwanese_docx(data: dict, output_path: str):
             _set_font(p.add_run(text), 10, font_name=TW_FONT)
 
     if data.get('education'):
-        _tw_section_heading(doc, TW_SECTIONS['education'])
+        _tw_section_heading(doc, lbl['education'])
         for edu in data['education']:
             deg = '、'.join(x for x in [edu.get('degree',''), edu.get('field','')] if x)
             grad = edu.get('graduation','')
@@ -827,7 +872,7 @@ def _build_taiwanese_docx(data: dict, output_path: str):
             _set_font(p.add_run(f"{edu.get('school','')}　{deg}　{grad}畢業"), 10, font_name=TW_FONT)
 
     if data.get('projects'):
-        _tw_section_heading(doc, TW_SECTIONS['projects'])
+        _tw_section_heading(doc, lbl['projects'])
         for proj in data['projects']:
             p = doc.add_paragraph()
             p.paragraph_format.space_before = Pt(4)
@@ -841,7 +886,7 @@ def _build_taiwanese_docx(data: dict, output_path: str):
 
     certs = [c for c in data.get('certifications', []) if c]
     if certs:
-        _tw_section_heading(doc, TW_SECTIONS['certifications'])
+        _tw_section_heading(doc, lbl['certifications'])
         for cert in certs:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(1)
@@ -934,10 +979,13 @@ _TEMPLATE_CSS = {
 }
 
 
-def _render_html(data: dict, template: str = 'modern') -> str:
-    is_japanese  = template == 'japanese'
-    is_taiwanese = template == 'taiwanese'
-    is_cjk       = is_japanese or is_taiwanese
+def _render_html(data: dict, template: str = 'modern', language: str = 'english') -> str:
+    is_japanese_tmpl  = template == 'japanese'
+    is_taiwanese_tmpl = template == 'taiwanese'
+    is_japanese  = is_japanese_tmpl
+    is_taiwanese = is_taiwanese_tmpl
+    is_cjk_lang  = language in ('japanese', 'taiwanese')
+    is_cjk       = is_japanese or is_taiwanese or is_cjk_lang
     css = _TEMPLATE_CSS.get(template, _TEMPLATE_CSS['modern'])
 
     contact_parts = [data.get('email',''), data.get('phone',''), data.get('location',''),
@@ -979,7 +1027,7 @@ def _render_html(data: dict, template: str = 'modern') -> str:
                 <span class="jp-date">{date_str}</span>
               </div>
               <div class="contact" style="margin-bottom:10px">{contact_line}</div>'''
-        labels = JP_SECTIONS
+        labels = _section_labels(language, 'japanese')
     elif is_taiwanese:
         date_str = f'製作日期：{today.year}年{today.month}月{today.day}日'
         if photo:
@@ -1001,7 +1049,7 @@ def _render_html(data: dict, template: str = 'modern') -> str:
                 <span class="tw-date">{date_str}</span>
               </div>
               <div class="contact" style="margin-bottom:10px">{contact_line}</div>'''
-        labels = TW_SECTIONS
+        labels = _section_labels(language, 'taiwanese')
     else:
         name_contact = f'''
           <div class="name">{data.get("name","")}</div>
@@ -1011,11 +1059,7 @@ def _render_html(data: dict, template: str = 'modern') -> str:
             header = f'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px"><div style="flex:1">{name_contact}</div>{photo_el}</div>'
         else:
             header = name_contact
-        labels = {
-            'summary': 'Professional Summary', 'experience': 'Experience',
-            'education': 'Education', 'skills': 'Skills', 'languages': 'Languages',
-            'projects': 'Projects', 'certifications': 'Certifications'
-        }
+        labels = _section_labels(language, template)
 
     prefix = '■ ' if is_cjk else ''
 
@@ -1033,12 +1077,7 @@ def _render_html(data: dict, template: str = 'modern') -> str:
             is_last = (i == len(exps) - 1)
             end_raw = exp.get('end_date', '') or ''
             is_current = not end_raw or end_raw.lower() in ('present', '現在', '至今', '')
-            if is_japanese:
-                end = '現在に至る' if is_current else end_raw
-            elif is_taiwanese:
-                end = '至今' if is_current else end_raw
-            else:
-                end = 'Present' if is_current else end_raw
+            end = _present_label(language) if is_current else end_raw
             bullets = ''.join(f'<li>{b}</li>' for b in exp.get('bullets', []))
             if is_japanese:
                 exp_html += f'''
@@ -1249,17 +1288,17 @@ _DOCX_BUILDERS = {
 }
 
 
-def build_docx(data: dict, output_path: str, template: str = 'modern'):
-    _DOCX_BUILDERS.get(template, _build_modern_docx)(data, output_path)
+def build_docx(data: dict, output_path: str, template: str = 'modern', language: str = 'english'):
+    _DOCX_BUILDERS.get(template, _build_modern_docx)(data, output_path, language)
 
 
-def build_pdf(data: dict, output_path: str, template: str = 'modern'):
-    weasyprint.HTML(string=_render_html(data, template)).write_pdf(output_path)
+def build_pdf(data: dict, output_path: str, template: str = 'modern', language: str = 'english'):
+    weasyprint.HTML(string=_render_html(data, template, language)).write_pdf(output_path)
 
 
-def build_preview_html(data: dict, output_path: str, template: str = 'modern'):
+def build_preview_html(data: dict, output_path: str, template: str = 'modern', language: str = 'english'):
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(_render_html(data, template))
+        f.write(_render_html(data, template, language))
 
 
 def build_markdown(data: dict, output_path: str):

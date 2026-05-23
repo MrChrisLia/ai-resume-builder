@@ -705,6 +705,37 @@ select {
   margin-top: 2px;
 }
 
+/* ── Language Buttons ──────────────────────────────────────────────────────── */
+.lang-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.lang-btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.lang-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.lang-btn.selected {
+  border-color: var(--accent);
+  background: rgba(110, 231, 183, 0.1);
+  color: var(--accent);
+}
+
 /* ── Preview Modal ─────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;

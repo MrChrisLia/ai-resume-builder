@@ -123,10 +123,11 @@ def fit():
     candidate          = data.get('candidate', {})
     job_description    = data.get('job_description', '').strip()
     additional_notes   = data.get('additional_notes', '').strip()
+    language           = data.get('language', 'english').strip()
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
     try:
-        return jsonify({'success': True, 'fit': analyze_fit(candidate, job_description, additional_notes)})
+        return jsonify({'success': True, 'fit': analyze_fit(candidate, job_description, additional_notes, language)})
     except Exception as e:
         msg, status = _ai_error(e)
         return jsonify({'error': msg}), status
@@ -141,13 +142,14 @@ def generate():
     job_description  = data.get('job_description', '').strip()
     formats          = data.get('formats', ['docx', 'pdf'])
     template         = data.get('template', 'modern')
+    language         = data.get('language', 'english').strip()
     additional_notes = data.get('additional_notes', '').strip()
 
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
 
     try:
-        resume_data = generate_resume(candidate, job_description, template, additional_notes)
+        resume_data = generate_resume(candidate, job_description, template, language, additional_notes)
     except Exception as e:
         msg, status = _ai_error(e)
         return jsonify({'error': msg}), status
@@ -161,12 +163,12 @@ def generate():
 
     if 'docx' in formats:
         p = os.path.join(OUTPUT_DIR, f'{fid}.docx')
-        build_docx(resume_data, p, template)
+        build_docx(resume_data, p, template, language)
         downloads['docx'] = f'/download/{fid}.docx'
 
     if 'pdf' in formats:
         p = os.path.join(OUTPUT_DIR, f'{fid}.pdf')
-        build_pdf(resume_data, p, template)
+        build_pdf(resume_data, p, template, language)
         downloads['pdf'] = f'/download/{fid}.pdf'
 
     if 'md' in formats:
@@ -175,7 +177,7 @@ def generate():
         downloads['md'] = f'/download/{fid}.md'
 
     html_path = os.path.join(OUTPUT_DIR, f'{fid}.html')
-    build_preview_html(resume_data, html_path, template)
+    build_preview_html(resume_data, html_path, template, language)
     downloads['preview'] = f'/preview/{fid}.html'
 
     # Strip photo before sending to client — documents already built, no need to store base64 in localStorage
@@ -193,24 +195,25 @@ def regenerate():
     resume_data = data.get('resume_data', {})
     formats     = data.get('formats', ['docx', 'pdf'])
     template    = data.get('template', 'modern')
+    language    = data.get('language', 'english').strip()
     if not resume_data: return jsonify({'error': 'No resume data provided'}), 400
 
     fid = _file_id()
     downloads = {}
     if 'docx' in formats:
         p = os.path.join(OUTPUT_DIR, f'{fid}.docx')
-        build_docx(resume_data, p, template)
+        build_docx(resume_data, p, template, language)
         downloads['docx'] = f'/download/{fid}.docx'
     if 'pdf' in formats:
         p = os.path.join(OUTPUT_DIR, f'{fid}.pdf')
-        build_pdf(resume_data, p, template)
+        build_pdf(resume_data, p, template, language)
         downloads['pdf'] = f'/download/{fid}.pdf'
     if 'md' in formats:
         p = os.path.join(OUTPUT_DIR, f'{fid}.md')
         build_markdown(resume_data, p)
         downloads['md'] = f'/download/{fid}.md'
     html_path = os.path.join(OUTPUT_DIR, f'{fid}.html')
-    build_preview_html(resume_data, html_path, template)
+    build_preview_html(resume_data, html_path, template, language)
     downloads['preview'] = f'/preview/{fid}.html'
     return jsonify({'success': True, 'downloads': downloads})
 
@@ -227,11 +230,13 @@ def cover_letter():
     template         = data.get('template', 'modern')
     additional_notes = data.get('additional_notes', '').strip()
 
+    language         = data.get('language', 'english').strip()
+
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
 
     try:
-        letter = generate_cover_letter(candidate, job_description, resume_data, template, additional_notes)
+        letter = generate_cover_letter(candidate, job_description, resume_data, template, language, additional_notes)
     except Exception as e:
         msg, status = _ai_error(e)
         return jsonify({'error': msg}), status
@@ -265,9 +270,11 @@ def interview_prep():
     template         = data.get('template', 'modern')
     additional_notes = data.get('additional_notes', '').strip()
 
+    language         = data.get('language', 'english').strip()
+
     if not job_description: return jsonify({'error': 'Job description required'}), 400
     try:
-        questions = generate_interview_prep(candidate, job_description, template, additional_notes)
+        questions = generate_interview_prep(candidate, job_description, template, language, additional_notes)
         return jsonify({'success': True, 'questions': questions})
     except Exception as e:
         msg, status = _ai_error(e)

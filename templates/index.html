@@ -358,6 +358,17 @@
           </div>
         </div>
 
+        <!-- Content Language -->
+        <div class="card">
+          <h3 class="card-title">Content Language</h3>
+          <p class="card-hint">The language Gemini writes the resume in — independent of the visual template.</p>
+          <div class="lang-btn-group">
+            <button class="lang-btn selected" onclick="selectLanguage('english', this)">English</button>
+            <button class="lang-btn" onclick="selectLanguage('japanese', this)">日本語</button>
+            <button class="lang-btn" onclick="selectLanguage('taiwanese', this)">繁體中文</button>
+          </div>
+        </div>
+
         <button class="btn-generate btn-generate-resume" id="btn-generate" onclick="generateResume()">
           <span id="btn-text">Generate Tailored Resume</span>
           <span id="btn-spinner" class="spinner hidden"></span>
