@@ -453,24 +453,24 @@
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
     <div class="field-grid two">
       <div class="field">
-        <label>Company</label>
+        <label data-i18n="tpl-company">Company</label>
         <input type="text" name="company" placeholder="Acme Corp">
       </div>
       <div class="field">
-        <label>Job Title</label>
+        <label data-i18n="tpl-job-title">Job Title</label>
         <input type="text" name="title" placeholder="Software Engineer">
       </div>
       <div class="field">
-        <label>Start Date</label>
+        <label data-i18n="tpl-start-date">Start Date</label>
         <input type="text" name="start_date" placeholder="Jan 2022">
       </div>
       <div class="field">
-        <label>End Date</label>
+        <label data-i18n="tpl-end-date">End Date</label>
         <input type="text" name="end_date" placeholder="Present">
       </div>
     </div>
     <div class="field">
-      <label>Responsibilities &amp; Achievements</label>
+      <label data-i18n="tpl-responsibilities">Responsibilities &amp; Achievements</label>
       <textarea name="description" rows="4" placeholder="Describe your role, key accomplishments, and impact. Include metrics when possible."></textarea>
     </div>
   </div>
@@ -481,19 +481,19 @@
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
     <div class="field-grid two">
       <div class="field">
-        <label>School / University / Platform</label>
+        <label data-i18n="tpl-school">School / University / Platform</label>
         <input type="text" name="school" placeholder="UC Berkeley, Coursera, Udemy…">
       </div>
       <div class="field">
-        <label>Graduation / Completion Year</label>
+        <label data-i18n="tpl-graduation">Graduation / Completion Year</label>
         <input type="text" name="graduation" placeholder="2020">
       </div>
       <div class="field">
-        <label>Degree / Course</label>
+        <label data-i18n="tpl-degree">Degree / Course</label>
         <input type="text" name="degree" placeholder="Bachelor of Science, Machine Learning…">
       </div>
       <div class="field">
-        <label>Field of Study</label>
+        <label data-i18n="tpl-field">Field of Study</label>
         <input type="text" name="field" placeholder="Computer Science">
       </div>
     </div>
@@ -505,11 +505,11 @@
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
     <div class="field-grid two">
       <div class="field">
-        <label>Category</label>
+        <label data-i18n="tpl-category">Category</label>
         <input type="text" name="category" placeholder="Frameworks">
       </div>
       <div class="field">
-        <label>Skills (comma-separated)</label>
+        <label data-i18n="tpl-skills-csv">Skills (comma-separated)</label>
         <input type="text" name="items" placeholder="React, Node.js, PostgreSQL">
       </div>
     </div>
@@ -521,21 +521,21 @@
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
     <div class="field-grid two">
       <div class="field">
-        <label>Language</label>
+        <label data-i18n="tpl-lang-name">Language</label>
         <input type="text" name="language" placeholder="Japanese">
       </div>
       <div class="field">
-        <label>Proficiency</label>
+        <label data-i18n="tpl-proficiency">Proficiency</label>
         <select name="proficiency">
-          <option value="Native">Native</option>
-          <option value="Fluent">Fluent</option>
-          <option value="Professional">Professional Working</option>
-          <option value="Conversational">Conversational</option>
-          <option value="Basic">Basic</option>
+          <option value="Native" data-i18n="opt-native">Native</option>
+          <option value="Fluent" data-i18n="opt-fluent">Fluent</option>
+          <option value="Professional" data-i18n="opt-professional">Professional Working</option>
+          <option value="Conversational" data-i18n="opt-conversational">Conversational</option>
+          <option value="Basic" data-i18n="opt-basic">Basic</option>
         </select>
       </div>
       <div class="field" style="grid-column: 1 / -1;">
-        <label>Certificate <span class="optional">(optional)</span></label>
+        <label><span data-i18n="tpl-certificate">Certificate</span> <span class="optional" data-i18n="optional">(optional)</span></label>
         <input type="text" name="certificate" placeholder="e.g. JLPT N2, DELF B2, HSK 5, Cambridge C1…">
       </div>
     </div>
@@ -547,16 +547,16 @@
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
     <div class="field-grid two">
       <div class="field">
-        <label>Project Name</label>
+        <label data-i18n="tpl-project-name">Project Name</label>
         <input type="text" name="name" placeholder="Open Source Scheduler">
       </div>
       <div class="field">
-        <label>Technologies</label>
+        <label data-i18n="tpl-technologies">Technologies</label>
         <input type="text" name="technologies" placeholder="Python, Redis, Docker">
       </div>
     </div>
     <div class="field">
-      <label>Description</label>
+      <label data-i18n="tpl-description">Description</label>
       <textarea name="description" rows="2" placeholder="Brief description of what it does and your role."></textarea>
     </div>
   </div>
@@ -566,7 +566,7 @@
   <div class="entry-block cert-block">
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
     <div class="field">
-      <label>Certification</label>
+      <label data-i18n="tpl-cert-label">Certification</label>
       <input type="text" name="cert" placeholder="AWS Certified Solutions Architect – Associate (2024)">
     </div>
   </div>

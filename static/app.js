@@ -67,6 +67,21 @@ const TRANSLATIONS = {
     'err-no-format': 'Select at least one output format.',
     'err-import-json': 'Could not parse JSON file.',
     'err-import-prefix': 'Import failed: ',
+    // Entry-block template labels
+    'tpl-company': 'Company', 'tpl-job-title': 'Job Title',
+    'tpl-start-date': 'Start Date', 'tpl-end-date': 'End Date',
+    'tpl-responsibilities': 'Responsibilities & Achievements',
+    'tpl-school': 'School / University / Platform',
+    'tpl-graduation': 'Graduation / Completion Year',
+    'tpl-degree': 'Degree / Course', 'tpl-field': 'Field of Study',
+    'tpl-category': 'Category', 'tpl-skills-csv': 'Skills (comma-separated)',
+    'tpl-lang-name': 'Language', 'tpl-proficiency': 'Proficiency',
+    'tpl-certificate': 'Certificate',
+    'opt-native': 'Native', 'opt-fluent': 'Fluent',
+    'opt-professional': 'Professional Working',
+    'opt-conversational': 'Conversational', 'opt-basic': 'Basic',
+    'tpl-project-name': 'Project Name', 'tpl-technologies': 'Technologies',
+    'tpl-description': 'Description', 'tpl-cert-label': 'Certification',
   },
   ja: {
     'powered-by': 'Gemini搭載',
@@ -127,6 +142,21 @@ const TRANSLATIONS = {
     'err-no-format': '出力形式を1つ以上選択してください。',
     'err-import-json': 'JSONファイルを解析できませんでした。',
     'err-import-prefix': 'インポート失敗: ',
+    // Entry-block template labels
+    'tpl-company': '会社名', 'tpl-job-title': '役職名',
+    'tpl-start-date': '開始年月', 'tpl-end-date': '終了年月',
+    'tpl-responsibilities': '職務内容・実績',
+    'tpl-school': '学校 / 大学 / プラットフォーム',
+    'tpl-graduation': '卒業・修了年', 'tpl-degree': '学位 / コース',
+    'tpl-field': '専攻・学科', 'tpl-category': 'カテゴリ',
+    'tpl-skills-csv': 'スキル（カンマ区切り）',
+    'tpl-lang-name': '言語', 'tpl-proficiency': '習熟度',
+    'tpl-certificate': '資格・検定',
+    'opt-native': 'ネイティブ', 'opt-fluent': '流暢',
+    'opt-professional': 'ビジネスレベル',
+    'opt-conversational': '日常会話レベル', 'opt-basic': '基礎レベル',
+    'tpl-project-name': 'プロジェクト名', 'tpl-technologies': '使用技術',
+    'tpl-description': '概要', 'tpl-cert-label': '資格・免許',
   },
   tw: {
     'powered-by': '由 Gemini 驅動',
@@ -187,6 +217,21 @@ const TRANSLATIONS = {
     'err-no-format': '請選擇至少一種輸出格式。',
     'err-import-json': '無法解析 JSON 檔案。',
     'err-import-prefix': '匯入失敗：',
+    // Entry-block template labels
+    'tpl-company': '公司名稱', 'tpl-job-title': '職稱',
+    'tpl-start-date': '開始日期', 'tpl-end-date': '結束日期',
+    'tpl-responsibilities': '職責與成就',
+    'tpl-school': '學校 / 大學 / 平台',
+    'tpl-graduation': '畢業 / 結業年份', 'tpl-degree': '學位 / 課程',
+    'tpl-field': '主修科系', 'tpl-category': '類別',
+    'tpl-skills-csv': '技能（逗號分隔）',
+    'tpl-lang-name': '語言', 'tpl-proficiency': '熟練程度',
+    'tpl-certificate': '語言證照',
+    'opt-native': '母語', 'opt-fluent': '流利',
+    'opt-professional': '商務用',
+    'opt-conversational': '日常對話', 'opt-basic': '基礎',
+    'tpl-project-name': '專案名稱', 'tpl-technologies': '使用技術',
+    'tpl-description': '專案描述', 'tpl-cert-label': '證照',
   },
 };
 
@@ -236,23 +281,24 @@ function t(key) {
   return (TRANSLATIONS[currentUILang] || TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
 }
 
-function setUILang(lang, el) {
-  currentUILang = lang;
-  localStorage.setItem('uiLang', lang);
-  const htmlEl = document.documentElement;
-  htmlEl.lang = lang === 'ja' ? 'ja' : lang === 'tw' ? 'zh-TW' : 'en';
-
-  document.querySelectorAll('.ui-lang-btn').forEach(b => b.classList.remove('selected'));
-  if (el) el.classList.add('selected');
-
-  document.querySelectorAll('[data-i18n]').forEach(node => {
+function _applyTranslations(root) {
+  root.querySelectorAll('[data-i18n]').forEach(node => {
     const val = t(node.getAttribute('data-i18n'));
     if (val) node.textContent = val;
   });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
+  root.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
     const val = t(node.getAttribute('data-i18n-placeholder'));
     if (val) node.placeholder = val;
   });
+}
+
+function setUILang(lang, el) {
+  currentUILang = lang;
+  localStorage.setItem('uiLang', lang);
+  document.documentElement.lang = lang === 'ja' ? 'ja' : lang === 'tw' ? 'zh-TW' : 'en';
+  document.querySelectorAll('.ui-lang-btn').forEach(b => b.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+  _applyTranslations(document);
 }
 
 // ── Profile storage helpers ───────────────────────────────────────────────────
@@ -616,7 +662,9 @@ function collectCandidate() {
 // ── Dynamic block helpers ─────────────────────────────────────────────────────
 
 function cloneTemplate(id) {
-  return document.getElementById(id).content.cloneNode(true);
+  const frag = document.getElementById(id).content.cloneNode(true);
+  _applyTranslations(frag);
+  return frag;
 }
 
 function removeBlock(btn) {
