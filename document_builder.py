@@ -185,7 +185,7 @@ def _section_labels(language: str, template: str = 'modern') -> dict:
     return {
         'summary': 'Professional Summary', 'experience': 'Experience',
         'education': 'Education', 'skills': 'Skills', 'languages': 'Languages',
-        'projects': 'Projects', 'certifications': 'Certifications',
+        'projects': 'Projects', 'certifications': 'Certifications / Professional Licenses',
     }
 
 
@@ -1348,7 +1348,7 @@ def build_markdown(data: dict, output_path: str):
         sec('Projects', proj_lines)
 
     certs = [c for c in data.get('certifications', []) if c]
-    if certs: sec('Certifications', [f"- {c}" for c in certs])
+    if certs: sec('Certifications / Professional Licenses', [f"- {c}" for c in certs])
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
