@@ -1050,8 +1050,11 @@ function closePreviewModal(event) {
 // ── History ───────────────────────────────────────────────────────────────────
 
 function getHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
-  catch { return []; }
+  try {
+    const ttl = 7 * 24 * 60 * 60 * 1000; // 7 days
+    const all = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    return all.filter(e => Date.now() - (e.timestamp || 0) < ttl);
+  } catch { return []; }
 }
 
 function saveHistory(list) {

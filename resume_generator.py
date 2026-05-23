@@ -320,7 +320,7 @@ def parse_resume_text(text: str) -> dict:
     prompt = f"""You are a resume parser. Extract all information from the resume text below.
 
 === RESUME TEXT ===
-{text}
+{text[:50000]}
 
 Instructions:
 - Group skills into logical categories (Languages, Frameworks, Tools, Cloud, etc.)

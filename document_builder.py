@@ -1254,17 +1254,19 @@ def build_cover_letter_docx(letter_data: dict, candidate: dict, output_path: str
 
 
 def build_cover_letter_pdf(letter_data: dict, candidate: dict, output_path: str):
-    contact_parts = [candidate.get('email',''), candidate.get('phone',''),
-                     candidate.get('location',''), candidate.get('linkedin','')]
+    contact_parts = [_e(candidate.get('email','')), _e(candidate.get('phone','')),
+                     _e(candidate.get('location','')), _e(candidate.get('linkedin',''))]
     contact_line = ' | '.join(p for p in contact_parts if p)
+    name = _e(candidate.get('name', ''))
     paragraphs = ''.join(
-        f'<p>{para.strip()}</p>'
+        f'<p>{_e(para.strip())}</p>'
         for para in letter_data.get('text', '').split('\n\n')
         if para.strip()
     )
     html = f'''<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <style>
+  @page {{ size: letter; margin: 0; }}
   body {{ font-family: Georgia, serif; font-size: 11pt; color: #222;
          padding: 1in 1.2in; line-height: 1.7; max-width: 700px; }}
   .sender-name {{ font-size: 15pt; font-weight: bold; color: #1a1a2e; margin-bottom: 4px; }}
@@ -1273,10 +1275,10 @@ def build_cover_letter_pdf(letter_data: dict, candidate: dict, output_path: str)
   .signoff {{ margin-top: 20px; }}
   .sig-name {{ font-weight: bold; margin-top: 8px; }}
 </style></head><body>
-  <div class="sender-name">{candidate.get("name","")}</div>
+  <div class="sender-name">{name}</div>
   <div class="contact">{contact_line}</div>
   {paragraphs}
-  <div class="signoff">Sincerely,<div class="sig-name">{candidate.get("name","")}</div></div>
+  <div class="signoff">Sincerely,<div class="sig-name">{name}</div></div>
 </body></html>'''
     weasyprint.HTML(string=html, url_fetcher=_safe_url_fetcher).write_pdf(output_path)
 

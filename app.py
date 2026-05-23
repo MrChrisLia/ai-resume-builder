@@ -25,7 +25,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
+_secret = os.environ.get('FLASK_SECRET_KEY')
+if not _secret:
+    _secret = os.urandom(32)
+    # Note: sessions won't persist across restarts without FLASK_SECRET_KEY set
+app.secret_key = _secret
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB upload limit
 
 limiter = Limiter(
@@ -41,7 +45,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 VALID_TEMPLATES = frozenset({'modern', 'classic', 'minimal', 'japanese', 'taiwanese'})
 VALID_LANGUAGES  = frozenset({'english', 'japanese', 'taiwanese'})
 
-_SAFE_NAME = re.compile(r'^[a-f0-9_]+\.(docx|pdf|md|html)$')
+_SAFE_NAME = re.compile(r'^(cl_)?[a-f0-9]+\.(docx|pdf|md|html)$')
 
 
 def _v(val, allowed, default):
@@ -117,7 +121,8 @@ def _ai_error(e: Exception) -> tuple[str, int, int | None]:
         if code == 503 or 'UNAVAILABLE' in msg:
             return ('Gemini API is temporarily unavailable. Please try again in a few seconds.', 503, None)
         return (f'Gemini API error ({code}): {msg[:200]}', 500, None)
-    return (str(e)[:300], 500, None)
+    logger.exception('Unexpected non-Gemini error in AI call')
+    return ('An unexpected error occurred. Please try again.', 500, None)
 
 
 # ── Pages ──────────────────────────────────────────────────────────────────────
@@ -224,6 +229,9 @@ def generate():
         if retry: resp['retry_after'] = retry
         return jsonify(resp), status
 
+    if not isinstance(resume_data, dict):
+        return jsonify({'error': 'AI returned an unexpected response. Please try again.'}), 500
+
     # Re-attach photo for document builders (stripped before Gemini call to save tokens)
     if candidate.get('photo'):
         resume_data['photo'] = candidate['photo']
@@ -231,24 +239,28 @@ def generate():
     fid = _file_id()
     downloads = {}
 
-    if 'docx' in formats:
-        p = os.path.join(OUTPUT_DIR, f'{fid}.docx')
-        build_docx(resume_data, p, template, language)
-        downloads['docx'] = f'/download/{fid}.docx'
+    try:
+        if 'docx' in formats:
+            p = os.path.join(OUTPUT_DIR, f'{fid}.docx')
+            build_docx(resume_data, p, template, language)
+            downloads['docx'] = f'/download/{fid}.docx'
 
-    if 'pdf' in formats:
-        p = os.path.join(OUTPUT_DIR, f'{fid}.pdf')
-        build_pdf(resume_data, p, template, language)
-        downloads['pdf'] = f'/download/{fid}.pdf'
+        if 'pdf' in formats:
+            p = os.path.join(OUTPUT_DIR, f'{fid}.pdf')
+            build_pdf(resume_data, p, template, language)
+            downloads['pdf'] = f'/download/{fid}.pdf'
 
-    if 'md' in formats:
-        p = os.path.join(OUTPUT_DIR, f'{fid}.md')
-        build_markdown(resume_data, p)
-        downloads['md'] = f'/download/{fid}.md'
+        if 'md' in formats:
+            p = os.path.join(OUTPUT_DIR, f'{fid}.md')
+            build_markdown(resume_data, p)
+            downloads['md'] = f'/download/{fid}.md'
 
-    html_path = os.path.join(OUTPUT_DIR, f'{fid}.html')
-    build_preview_html(resume_data, html_path, template, language)
-    downloads['preview'] = f'/preview/{fid}.html'
+        html_path = os.path.join(OUTPUT_DIR, f'{fid}.html')
+        build_preview_html(resume_data, html_path, template, language)
+        downloads['preview'] = f'/preview/{fid}.html'
+    except Exception:
+        logger.exception('Error building resume documents')
+        return jsonify({'error': 'Failed to build documents. Please try again.'}), 500
 
     # Strip photo before sending to client — documents already built, no need to store base64 in localStorage
     resume_for_client = {k: v for k, v in resume_data.items() if k != 'photo'}
@@ -267,25 +279,30 @@ def regenerate():
     formats     = [f for f in data.get('formats', ['docx', 'pdf']) if f in ('docx', 'pdf', 'md')]
     template    = _v(data.get('template', 'modern'), VALID_TEMPLATES, 'modern')
     language    = _v(data.get('language', 'english').strip(), VALID_LANGUAGES, 'english')
-    if not resume_data: return jsonify({'error': 'No resume data provided'}), 400
+    if not isinstance(resume_data, dict) or not resume_data:
+        return jsonify({'error': 'No resume data provided'}), 400
 
     fid = _file_id()
     downloads = {}
-    if 'docx' in formats:
-        p = os.path.join(OUTPUT_DIR, f'{fid}.docx')
-        build_docx(resume_data, p, template, language)
-        downloads['docx'] = f'/download/{fid}.docx'
-    if 'pdf' in formats:
-        p = os.path.join(OUTPUT_DIR, f'{fid}.pdf')
-        build_pdf(resume_data, p, template, language)
-        downloads['pdf'] = f'/download/{fid}.pdf'
-    if 'md' in formats:
-        p = os.path.join(OUTPUT_DIR, f'{fid}.md')
-        build_markdown(resume_data, p)
-        downloads['md'] = f'/download/{fid}.md'
-    html_path = os.path.join(OUTPUT_DIR, f'{fid}.html')
-    build_preview_html(resume_data, html_path, template, language)
-    downloads['preview'] = f'/preview/{fid}.html'
+    try:
+        if 'docx' in formats:
+            p = os.path.join(OUTPUT_DIR, f'{fid}.docx')
+            build_docx(resume_data, p, template, language)
+            downloads['docx'] = f'/download/{fid}.docx'
+        if 'pdf' in formats:
+            p = os.path.join(OUTPUT_DIR, f'{fid}.pdf')
+            build_pdf(resume_data, p, template, language)
+            downloads['pdf'] = f'/download/{fid}.pdf'
+        if 'md' in formats:
+            p = os.path.join(OUTPUT_DIR, f'{fid}.md')
+            build_markdown(resume_data, p)
+            downloads['md'] = f'/download/{fid}.md'
+        html_path = os.path.join(OUTPUT_DIR, f'{fid}.html')
+        build_preview_html(resume_data, html_path, template, language)
+        downloads['preview'] = f'/preview/{fid}.html'
+    except Exception:
+        logger.exception('Error building documents in regenerate')
+        return jsonify({'error': 'Failed to build documents. Please try again.'}), 500
     return jsonify({'success': True, 'downloads': downloads})
 
 
