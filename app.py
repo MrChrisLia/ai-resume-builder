@@ -120,12 +120,13 @@ def import_profile():
 @app.route('/analyze-fit', methods=['POST'])
 def fit():
     data = request.get_json() or {}
-    candidate       = data.get('candidate', {})
-    job_description = data.get('job_description', '').strip()
+    candidate          = data.get('candidate', {})
+    job_description    = data.get('job_description', '').strip()
+    additional_notes   = data.get('additional_notes', '').strip()
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
     try:
-        return jsonify({'success': True, 'fit': analyze_fit(candidate, job_description)})
+        return jsonify({'success': True, 'fit': analyze_fit(candidate, job_description, additional_notes)})
     except Exception as e:
         msg, status = _ai_error(e)
         return jsonify({'error': msg}), status
@@ -136,16 +137,17 @@ def fit():
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.get_json() or {}
-    candidate      = data.get('candidate', {})
-    job_description = data.get('job_description', '').strip()
-    formats         = data.get('formats', ['docx', 'pdf'])
-    template        = data.get('template', 'modern')
+    candidate        = data.get('candidate', {})
+    job_description  = data.get('job_description', '').strip()
+    formats          = data.get('formats', ['docx', 'pdf'])
+    template         = data.get('template', 'modern')
+    additional_notes = data.get('additional_notes', '').strip()
 
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
 
     try:
-        resume_data = generate_resume(candidate, job_description, template)
+        resume_data = generate_resume(candidate, job_description, template, additional_notes)
     except Exception as e:
         msg, status = _ai_error(e)
         return jsonify({'error': msg}), status
@@ -218,17 +220,18 @@ def regenerate():
 @app.route('/generate-cover-letter', methods=['POST'])
 def cover_letter():
     data = request.get_json() or {}
-    candidate      = data.get('candidate', {})
-    job_description = data.get('job_description', '').strip()
-    resume_data    = data.get('resume_data', {})
-    formats        = data.get('formats', ['docx', 'pdf'])
-    template       = data.get('template', 'modern')
+    candidate        = data.get('candidate', {})
+    job_description  = data.get('job_description', '').strip()
+    resume_data      = data.get('resume_data', {})
+    formats          = data.get('formats', ['docx', 'pdf'])
+    template         = data.get('template', 'modern')
+    additional_notes = data.get('additional_notes', '').strip()
 
     if not job_description:        return jsonify({'error': 'Job description required'}), 400
     if not candidate.get('name'): return jsonify({'error': 'Name required'}), 400
 
     try:
-        letter = generate_cover_letter(candidate, job_description, resume_data, template)
+        letter = generate_cover_letter(candidate, job_description, resume_data, template, additional_notes)
     except Exception as e:
         msg, status = _ai_error(e)
         return jsonify({'error': msg}), status
@@ -257,13 +260,14 @@ def cover_letter():
 @app.route('/interview-prep', methods=['POST'])
 def interview_prep():
     data = request.get_json() or {}
-    candidate      = data.get('candidate', {})
-    job_description = data.get('job_description', '').strip()
-    template       = data.get('template', 'modern')
+    candidate        = data.get('candidate', {})
+    job_description  = data.get('job_description', '').strip()
+    template         = data.get('template', 'modern')
+    additional_notes = data.get('additional_notes', '').strip()
 
     if not job_description: return jsonify({'error': 'Job description required'}), 400
     try:
-        questions = generate_interview_prep(candidate, job_description, template)
+        questions = generate_interview_prep(candidate, job_description, template, additional_notes)
         return jsonify({'success': True, 'questions': questions})
     except Exception as e:
         msg, status = _ai_error(e)

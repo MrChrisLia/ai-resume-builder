@@ -480,7 +480,7 @@ async function analyzeFit() {
     const res  = await fetch('/analyze-fit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidate, job_description: jobDescription }),
+      body: JSON.stringify({ candidate, job_description: jobDescription, additional_notes: document.getElementById('additional-notes').value.trim() }),
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
@@ -555,7 +555,7 @@ async function generateResume() {
     const res  = await fetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidate, job_description: jobDescription, formats, template: currentTemplate }),
+      body: JSON.stringify({ candidate, job_description: jobDescription, formats, template: currentTemplate, additional_notes: document.getElementById('additional-notes').value.trim() }),
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
@@ -608,6 +608,7 @@ async function generateCoverLetter() {
         resume_data: _lastResumeData || {},
         formats,
         template: currentTemplate,
+        additional_notes: document.getElementById('additional-notes').value.trim(),
       }),
     });
     let data;
@@ -656,7 +657,7 @@ async function generateInterviewPrep() {
     const res  = await fetch('/interview-prep', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidate, job_description: jobDescription, template: currentTemplate }),
+      body: JSON.stringify({ candidate, job_description: jobDescription, template: currentTemplate, additional_notes: document.getElementById('additional-notes').value.trim() }),
     });
     let data;
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }

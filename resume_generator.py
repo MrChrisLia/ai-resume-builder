@@ -142,15 +142,16 @@ def _call_text(prompt: str, temperature: float = 0.5) -> str:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def analyze_fit(candidate_data: dict, job_description: str) -> dict:
+def analyze_fit(candidate_data: dict, job_description: str, additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
+    notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
     prompt = f"""You are a senior recruiter. Evaluate how well this candidate matches the job.
 
 === CANDIDATE PROFILE ===
 {json.dumps(candidate_data, indent=2)}
 
 === JOB DESCRIPTION ===
-{job_description}
+{job_description}{notes_section}
 
 Score honestly (1-10) on: skills match, experience relevance, education fit, language requirements, overall alignment.
 List 3-5 strengths and 2-4 gaps — name actual skills and requirements.
@@ -163,13 +164,14 @@ Return ONLY valid JSON (no markdown):
     return _parse_json(_call_json(prompt))
 
 
-def generate_resume(candidate_data: dict, job_description: str, template: str = 'modern') -> dict:
+def generate_resume(candidate_data: dict, job_description: str, template: str = 'modern', additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
     is_japanese = template == 'japanese'
     lang_note = (
         "\nWrite ALL content in formal Japanese (ですます調). "
         "Format dates as YYYY年MM月. Use Japanese professional terminology."
     ) if is_japanese else ''
+    notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
 
     prompt = f"""You are an expert resume writer and ATS optimization specialist.
 Create a perfectly tailored, ATS-optimized resume.{lang_note}
@@ -178,7 +180,7 @@ Create a perfectly tailored, ATS-optimized resume.{lang_note}
 {json.dumps(candidate_data, indent=2)}
 
 === JOB DESCRIPTION ===
-{job_description}
+{job_description}{notes_section}
 
 Instructions:
 1. Rewrite experience bullets with strong action verbs aligned with the role.
@@ -200,7 +202,7 @@ Return empty arrays [] for sections with no data.
 
 
 def generate_cover_letter(candidate_data: dict, job_description: str,
-                           resume_data: dict, template: str = 'modern') -> dict:
+                           resume_data: dict, template: str = 'modern', additional_notes: str = '') -> dict:
     candidate_data = _strip_photo(candidate_data)
     is_japanese = template == 'japanese'
 
@@ -222,6 +224,7 @@ def generate_cover_letter(candidate_data: dict, job_description: str,
         b for exp in resume_data.get('experience', [])[:2]
         for b in exp.get('bullets', [])[:3]
     ]
+    notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
 
     prompt = f"""You are an expert cover letter writer. {style}
 
@@ -229,7 +232,7 @@ def generate_cover_letter(candidate_data: dict, job_description: str,
 {json.dumps(candidate_data, indent=2)}
 
 === JOB DESCRIPTION ===
-{job_description}
+{job_description}{notes_section}
 
 === RESUME SUMMARY ===
 {resume_data.get('summary', '')}
@@ -247,10 +250,11 @@ Use paragraph breaks (double newline) between paragraphs.
 
 
 def generate_interview_prep(candidate_data: dict, job_description: str,
-                             template: str = 'modern') -> list:
+                             template: str = 'modern', additional_notes: str = '') -> list:
     candidate_data = _strip_photo(candidate_data)
     is_japanese = template == 'japanese'
     lang_note = "Write all questions and answers in Japanese (ですます調)." if is_japanese else ''
+    notes_section = f"\n=== ADDITIONAL CANDIDATE NOTES ===\n{additional_notes}" if additional_notes else ''
 
     prompt = f"""You are an expert interview coach. Generate targeted interview preparation.
 {lang_note}
@@ -259,7 +263,7 @@ def generate_interview_prep(candidate_data: dict, job_description: str,
 {json.dumps(candidate_data, indent=2)}
 
 === JOB DESCRIPTION ===
-{job_description}
+{job_description}{notes_section}
 
 Generate exactly 10 questions:
 - 3 behavioral (STAR method, past experience)
