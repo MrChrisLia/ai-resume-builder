@@ -813,10 +813,10 @@ async function generateResume() {
   if (document.getElementById('fmt-pdf').checked)  formats.push('pdf');
   if (document.getElementById('fmt-md').checked)   formats.push('md');
 
-  if (!formats.length) return showError(t('err-no-format'));
+  if (!formats.length) return showError(t('err-no-format'), 'error-msg-generate');
 
   setGenLoading(true);
-  hideError();
+  hideError('error-msg-generate');
   document.getElementById('results').classList.add('hidden');
 
   try {
@@ -837,7 +837,7 @@ async function generateResume() {
     document.getElementById('btn-cover-letter').classList.remove('hidden');
     document.getElementById('btn-interview').classList.remove('hidden');
   } catch (err) {
-    showError(err.message);
+    showError(err.message, 'error-msg-generate');
   } finally {
     setGenLoading(false);
   }
@@ -864,7 +864,7 @@ async function generateCoverLetter() {
   document.getElementById('btn-cl-spinner').classList.remove('hidden');
   document.getElementById('btn-cover-letter').disabled = true;
   document.getElementById('cl-results').classList.add('hidden');
-  hideError();
+  hideError('error-msg-generate');
 
   try {
     const res  = await fetch('/generate-cover-letter', {
@@ -902,7 +902,7 @@ async function generateCoverLetter() {
     document.getElementById('cl-results').classList.remove('hidden');
     document.getElementById('cl-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {
-    showError(err.message);
+    showError(err.message, 'error-msg-generate');
   } finally {
     document.getElementById('btn-cl-text').textContent = t('btn-cl-text');
     document.getElementById('btn-cl-spinner').classList.add('hidden');
@@ -920,7 +920,7 @@ async function generateInterviewPrep() {
   document.getElementById('btn-ip-spinner').classList.remove('hidden');
   document.getElementById('btn-interview').disabled = true;
   document.getElementById('interview-section').classList.add('hidden');
-  hideError();
+  hideError('error-msg-generate');
 
   try {
     const res  = await fetch('/interview-prep', {
@@ -936,7 +936,7 @@ async function generateInterviewPrep() {
     document.getElementById('interview-section').classList.remove('hidden');
     document.getElementById('interview-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {
-    showError(err.message);
+    showError(err.message, 'error-msg-generate');
   } finally {
     document.getElementById('btn-ip-text').textContent = t('btn-ip-text');
     document.getElementById('btn-ip-spinner').classList.add('hidden');
@@ -1111,15 +1111,20 @@ function clearHistory() {
 
 // ── Shared UI helpers ─────────────────────────────────────────────────────────
 
-function showError(msg) {
-  const el = document.getElementById('error-msg');
+function showError(msg, id = 'error-msg') {
+  const el = document.getElementById(id);
   el.textContent = msg;
   el.classList.toggle('hidden', !msg);
   if (msg) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function hideError() {
-  document.getElementById('error-msg').classList.add('hidden');
+function hideError(id = null) {
+  if (id) {
+    document.getElementById(id).classList.add('hidden');
+  } else {
+    document.getElementById('error-msg').classList.add('hidden');
+    document.getElementById('error-msg-generate').classList.add('hidden');
+  }
 }
 
 function _resetRightPanel() {
@@ -1128,7 +1133,7 @@ function _resetRightPanel() {
   document.getElementById('results').classList.add('hidden');
   document.getElementById('cl-results').classList.add('hidden');
   document.getElementById('interview-section').classList.add('hidden');
-  document.getElementById('error-msg').classList.add('hidden');
+  hideError();
   document.getElementById('job-description').value = '';
 }
 
