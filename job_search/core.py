@@ -35,19 +35,47 @@ REMOTEOK_API_URL = 'https://remoteok.com/api'
 ARBEITNOW_API_URL = 'https://www.arbeitnow.com/api/job-board-api'
 JOBICY_API_URL = 'https://jobicy.com/api/v2/remote-jobs'
 DICE_SEARCH_URL = 'https://www.dice.com/jobs'
+USAJOBS_SEARCH_URL = 'https://www.usajobs.gov/Search/Results'
+CLEARANCEJOBS_SEARCH_URL = 'https://www.clearancejobs.com/jobs'
+BUILTIN_SEARCH_URL = 'https://builtin.com/jobs'
+WELLFOUND_SEARCH_URL = 'https://wellfound.com/jobs'
+WEWORKREMOTELY_SEARCH_URL = 'https://weworkremotely.com/remote-jobs/search'
+ZIPRECRUITER_SEARCH_URL = 'https://www.ziprecruiter.com/jobs-search'
+GLASSDOOR_SEARCH_URL = 'https://www.glassdoor.com/Job/jobs.htm'
 TAIWAN_104_SEARCH_URL = 'https://www.104.com.tw/jobs/search/list'
 TAIWAN_104_DETAIL_URL = 'https://www.104.com.tw/job/ajax/content/{job_id}'
 TAIWAN_104_BROWSER_SCRIPT = os.path.join(BASE_DIR, 'scripts', 'scrape_104_browser.js')
+TAIWAN_JOBS_OPEN_DATA_URL = 'https://apiservice.mol.gov.tw/OdService/rest/datastore/A17000000J-030144-VAL'
+TAIWAN_1111_SEARCH_URL = 'https://www.1111.com.tw/search/job'
+TAIWAN_CAKE_SEARCH_URL = 'https://www.cake.me/jobs'
+TAIWAN_YOURATOR_SEARCH_URL = 'https://www.yourator.co/jobs'
+TAIWAN_YES123_SEARCH_URL = 'https://www.yes123.com.tw/wk_index/joblist.asp'
+TAIWAN_518_SEARCH_URL = 'https://www.518.com.tw/job-index.html'
+TAIWAN_MEET_JOBS_SEARCH_URL = 'https://meet.jobs/en/jobs'
 GAIJINPOT_FEED_URL = 'https://jobs.gaijinpot.com/en/job/feed/atom'
 JAPAN_DEV_JOBS_URL = 'https://japan-dev.com/jobs'
+TOKYODEV_JOBS_URL = 'https://www.tokyodev.com/jobs'
 DAIJOB_SEARCH_URL = 'https://www.daijob.com/en/jobs/search_result'
 CAREERCROSS_SEARCH_URL = 'https://www.careercross.com/en/job-search/result'
 GREEN_SEARCH_URL = 'https://www.green-japan.com/search_key/01'
 MYNAVI_SEARCH_BASE_URL = 'https://tenshoku.mynavi.jp/list'
 WANTEDLY_SEARCH_URL = 'https://www.wantedly.com/projects'
 FINDY_RECOMMENDS_URL = 'https://findy-code.io/recommends'
+BIZREACH_SEARCH_URL = 'https://www.bizreach.jp/job-feed/public-advertising/search'
+DODA_SEARCH_URL = 'https://doda.jp/DodaFront/View/JobSearchList.action'
+WEXPATS_SEARCH_URL = 'https://we-xpats.com/en/job/as/jp'
+OPENWORK_SEARCH_URL = 'https://www.openwork.jp/job_search_result.php'
+FORKWELL_SEARCH_URL = 'https://jobs.forkwell.com/jobs'
+PAIZA_SEARCH_URL = 'https://paiza.jp/career/job_offers'
+LAPRAS_SEARCH_URL = 'https://lapras.com/jobs'
 MICHAEL_PAGE_SEARCH_URL = 'https://www.michaelpage.co.jp/en/jobs'
 RGF_SEARCH_URL = 'https://www.rgf-professional.jp/en/jobs/'
+RAKUTEN_JAPAN_SEARCH_URL = 'https://japan-job-en.rakuten.careers/search-jobs'
+GREENHOUSE_BOARD_API_URL = 'https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true'
+LEVER_POSTINGS_API_URL = 'https://jobs.lever.co/v0/postings/{slug}?mode=json'
+ASHBY_BOARD_API_URL = 'https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true'
+WORKABLE_JOBS_API_URL = 'https://apply.workable.com/api/v3/accounts/{slug}/jobs'
+WORKABLE_WIDGET_API_URL = 'https://apply.workable.com/api/v1/widget/accounts/{slug}'
 LINKEDIN_SEARCH_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search'
 LINKEDIN_DETAIL_URL = 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}'
 INDEED_HOSTS_BY_COUNTRY = {
@@ -167,7 +195,10 @@ US_STATE_NAMES = frozenset({
 JOB_SEARCH_CACHE_TTL = 15 * 60
 JOB_DESCRIPTION_MAX_LENGTH = 24_000
 JOB_DETAIL_ENRICH_LIMIT = 12
+SOURCE_FAILURE_THRESHOLD = 3
+SOURCE_HEALTH_COOLDOWN = 45 * 60
 _job_search_cache = {}
+_source_health = {}
 _job_search_lock = threading.Lock()
 ALLOWED_JOB_DETAIL_HOSTS = frozenset({
     'japan-dev.com',
@@ -190,18 +221,51 @@ ALLOWED_JOB_DETAIL_HOSTS = frozenset({
     'tw.indeed.com',
     'dice.com',
     'www.dice.com',
+    'www.clearancejobs.com',
+    'www.usajobs.gov',
+    'builtin.com',
+    'www.builtin.com',
+    'weworkremotely.com',
+    'www.weworkremotely.com',
+    'www.ziprecruiter.com',
+    'www.glassdoor.com',
+    'www.1111.com.tw',
+    'www.518.com.tw',
+    'www.yes123.com.tw',
+    'www.cake.me',
+    'www.yourator.co',
+    'meet.jobs',
+    'www.tokyodev.com',
+    'www.bizreach.jp',
+    'doda.jp',
+    'we-xpats.com',
+    'www.openwork.jp',
+    'jobs.forkwell.com',
+    'paiza.jp',
+    'lapras.com',
+    'japan-job-en.rakuten.careers',
+    'japan-job-jp.rakuten.careers',
+    'global.rakuten.com',
+    'careers.mercari.com',
+    'woven.toyota',
+    'boards.greenhouse.io',
+    'job-boards.greenhouse.io',
+    'jobs.lever.co',
+    'app.ashbyhq.com',
+    'apply.workable.com',
 })
 
 JAPAN_SOURCE_DIRECTORY = {
     'direct': (
-        'Japan Dev', 'GaijinPot', 'Daijob', 'CareerCross', 'Green',
-        'Mynavi Tenshoku', 'Wantedly', 'Findy', 'Michael Page',
-        'RGF Professional', 'LinkedIn Jobs', 'Indeed Japan'
+        'Japan Dev', 'TokyoDev', 'GaijinPot', 'Daijob', 'CareerCross', 'Green',
+        'Mynavi Tenshoku', 'Wantedly', 'Findy', 'BizReach', 'doda',
+        'WeXpats', 'OpenWork', 'Forkwell', 'Paiza', 'LAPRAS',
+        'Michael Page', 'RGF Professional', 'Rakuten',
+        'Mercari', 'SmartNews', 'Woven by Toyota', 'LinkedIn Jobs', 'Indeed Japan'
     ),
     'session_or_blocked': (
-        'TokyoDev', 'Jobs in Japan', 'YOLO Japan', 'WeXpats Jobs',
-        'BizReach', 'Doda', 'Rikunabi NEXT',
-        'Kyujinbox', 'Paiza', 'Forkwell', 'LAPRAS', 'type', 'en-gage',
+        'Jobs in Japan', 'YOLO Japan', 'Rikunabi NEXT',
+        'Kyujinbox', 'type', 'en-gage',
         'TownWork', 'Baitoru', 'Hello Work Internet Service', 'Robert Walters',
         'Hays Japan', 'JAC Recruitment', 'Morgan McKinley', 'en world',
         'Pasona Global', 'Adecco Japan'
@@ -344,6 +408,35 @@ def _cache_get(cache_key: str):
 def _cache_set(cache_key: str, **payload):
     with _job_search_lock:
         _job_search_cache[cache_key] = {'time': _time.time(), **payload}
+
+
+def _source_disabled(source_key: str) -> bool:
+    now = _time.time()
+    with _job_search_lock:
+        state = _source_health.get(source_key)
+        if not state:
+            return False
+        disabled_until = state.get('disabled_until') or 0
+        if disabled_until > now:
+            return True
+        if disabled_until:
+            _source_health.pop(source_key, None)
+        return False
+
+
+def _record_source_success(source_key: str):
+    with _job_search_lock:
+        _source_health.pop(source_key, None)
+
+
+def _record_source_failure(source_key: str, error: str = ''):
+    now = _time.time()
+    with _job_search_lock:
+        state = _source_health.setdefault(source_key, {'failures': 0, 'disabled_until': 0, 'last_error': ''})
+        state['failures'] = int(state.get('failures') or 0) + 1
+        state['last_error'] = str(error or '')[:300]
+        if state['failures'] >= SOURCE_FAILURE_THRESHOLD:
+            state['disabled_until'] = now + SOURCE_HEALTH_COOLDOWN
 
 
 def _absolute_url(base: str, href: str) -> str:
@@ -787,7 +880,8 @@ def _enrich_job_descriptions(jobs: list[dict], limit: int = JOB_DETAIL_ENRICH_LI
         job for job in jobs[:limit]
         if job.get('url') and job.get('source') in {
             'Japan Dev', 'Daijob', 'CareerCross', 'Green', 'Mynavi Tenshoku',
-            'Wantedly', 'Michael Page', 'RGF Professional', 'LinkedIn', 'Indeed', 'Dice'
+            'Wantedly', 'Michael Page', 'RGF Professional', 'Rakuten',
+            'LinkedIn', 'Indeed', 'Dice'
         }
     ]
     if not candidates:
@@ -907,6 +1001,89 @@ def _infer_japanese_requirement(job: dict) -> str:
     )
     if any(re.search(pattern, text, re.I) for pattern in required_patterns):
         return 'Japanese required'
+
+    return ''
+
+
+def _infer_english_requirement(job: dict) -> str:
+    text = ' '.join(str(job.get(k, '')) for k in (
+        'title', 'company', 'location', 'category', 'job_type', 'description', 'search_terms', 'search_location'
+    ))
+    text = re.sub(r'\s+', ' ', text or '').strip()
+    if not text:
+        return ''
+    lower = text.lower()
+
+    location_text = ' '.join(str(job.get(k, '')) for k in ('location', 'search_location')).lower()
+    source = str(job.get('source') or '').strip().lower()
+    asia_context = (
+        any(term in location_text for term in _country_aliases('japan')) or
+        any(term in location_text for term in _country_aliases('taiwan')) or
+        source in {
+            '104', 'taiwanjobs', 'cake', 'yourator', 'yes123', '518', 'meet.jobs',
+            'japan dev', 'tokyodev', 'gaijinpot', 'daijob', 'careercross', 'green',
+            'mynavi tenshoku', 'wantedly', 'findy', 'michael page', 'rgf professional',
+            'rakuten', 'mercari', 'smartnews', 'woven by toyota',
+        }
+    )
+    if not asia_context:
+        return ''
+
+    no_english_patterns = (
+        r'\bno english (?:language )?(?:required|needed)\b',
+        r'\benglish (?:language )?(?:not required|not needed|unnecessary)\b',
+        r'英語(?:不要|不問|必要なし)',
+        r'英文(?:不拘|不要求|非必要|無要求)',
+    )
+    if any(re.search(pattern, lower if '\\b' in pattern else text, re.I) for pattern in no_english_patterns):
+        return 'No English required'
+
+    english_only_patterns = (
+        r'\benglish[- ]only\b',
+        r'\bonly english\b',
+        r'\benglish speaking (?:role|team|environment)\b',
+        r'英語(?:のみ|だけ)',
+        r'英文(?:為主|環境)',
+    )
+    if any(re.search(pattern, text, re.I) for pattern in english_only_patterns):
+        return 'English-only role'
+
+    fluent_patterns = (
+        r'\b(?:native|fluent)\s+english\b',
+        r'\benglish\s+(?:native|fluent|fluency)\b',
+        r'\bexcellent (?:command of )?english\b',
+        r'英語[^。,\n]*(?:ネイティブ|流暢|上級|堪能)',
+        r'(?:ネイティブ|流暢|上級|堪能)[^。,\n]*英語',
+        r'英文[^。,\n]*(?:精通|流利|高級)',
+        r'(?:精通|流利|高級)[^。,\n]*英文',
+    )
+    if any(re.search(pattern, text, re.I) for pattern in fluent_patterns):
+        return 'Fluent English required'
+
+    business_patterns = (
+        r'\bbusiness (?:level )?english\b',
+        r'\benglish\s+business (?:level)?\b',
+        r'\bprofessional (?:level )?english\b',
+        r'\bgood (?:command of )?english\b',
+        r'英語[^。,\n]*(?:ビジネス|中上級)',
+        r'(?:ビジネス|中上級)[^。,\n]*英語',
+        r'英文[^。,\n]*(?:中高級|商務|良好)',
+        r'(?:中高級|商務|良好)[^。,\n]*英文',
+    )
+    if any(re.search(pattern, text, re.I) for pattern in business_patterns):
+        return 'Business English required'
+
+    required_patterns = (
+        r'\benglish (?:language )?(?:required|needed|mandatory)\b',
+        r'\brequires english\b',
+        r'\bmust (?:speak|use|write|read|communicate in) english\b',
+        r'英語[^。,\n]*(?:必須|必要)',
+        r'(?:必須|必要)[^。,\n]*英語',
+        r'英文[^。,\n]*(?:必須|必要|要求|需)',
+        r'(?:必須|必要|要求|需)[^。,\n]*英文',
+    )
+    if any(re.search(pattern, text, re.I) for pattern in required_patterns):
+        return 'English required'
 
     return ''
 
@@ -1045,6 +1222,8 @@ def _annotate_job_metadata(job: dict) -> dict:
     normalized = dict(job)
     if not normalized.get('japanese_requirement'):
         normalized['japanese_requirement'] = _infer_japanese_requirement(normalized)
+    if not normalized.get('english_requirement'):
+        normalized['english_requirement'] = _infer_english_requirement(normalized)
     if not normalized.get('security_clearance'):
         normalized['security_clearance'] = _infer_security_clearance(normalized)
     if not normalized.get('public_safety_score'):
@@ -1056,7 +1235,7 @@ def _annotate_job_metadata(job: dict) -> dict:
 def _job_text(job: dict) -> str:
     return ' '.join(str(job.get(k, '')) for k in (
         'title', 'company', 'location', 'category', 'job_type', 'description',
-        'japanese_requirement', 'security_clearance', 'search_terms'
+        'japanese_requirement', 'english_requirement', 'security_clearance', 'search_terms'
     )).lower()
 
 

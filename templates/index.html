@@ -479,6 +479,10 @@
             <span id="btn-job-search-spinner" class="spinner hidden"></span>
           </button>
         </div>
+        <label class="job-deep-search-toggle">
+          <input type="checkbox" id="job-deep-search">
+          <span data-i18n="job-deep-search-label">Deep search experimental sources</span>
+        </label>
         <div id="job-search-error" class="error-msg hidden"></div>
       </div>
 
@@ -522,6 +526,17 @@
                 <option value="required" data-i18n="job-japanese-required">Japanese required</option>
                 <option value="business" data-i18n="job-japanese-business">Business+</option>
                 <option value="fluent" data-i18n="job-japanese-fluent">Fluent</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="job-english-filter-label">English Language</label>
+              <select id="job-english-filter" onchange="applyJobFilters()">
+                <option value="any" data-i18n="job-english-any">Any</option>
+                <option value="none" data-i18n="job-english-none">No English required</option>
+                <option value="required" data-i18n="job-english-required">English required</option>
+                <option value="business" data-i18n="job-english-business">Business+</option>
+                <option value="fluent" data-i18n="job-english-fluent">Fluent</option>
+                <option value="only" data-i18n="job-english-only">English-only</option>
               </select>
             </div>
             <div class="field">

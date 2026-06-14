@@ -79,6 +79,7 @@ const TRANSLATIONS = {
     'job-type-part-time': 'Part time',
     'job-type-freelance': 'Freelance',
     'job-type-internship': 'Internship',
+    'job-deep-search-label': 'Deep search experimental sources',
     'btn-search-jobs': 'Search Jobs',
     'btn-cancel-search': 'Cancel Search',
     'job-search-cancelled': 'Search cancelled.',
@@ -93,6 +94,7 @@ const TRANSLATIONS = {
     'job-salary-label': 'Salary',
     'job-use-description': 'Use Job Posting',
     'job-view-posting': 'View Posting',
+    'job-open-maps': 'Open in Maps',
     'job-search-error-prefix': 'Job search failed: ',
     'job-filters-title': 'Filters',
     'job-clear-filters': 'Clear',
@@ -110,6 +112,13 @@ const TRANSLATIONS = {
     'job-japanese-required': 'Japanese required',
     'job-japanese-business': 'Business+',
     'job-japanese-fluent': 'Fluent',
+    'job-english-filter-label': 'English Language',
+    'job-english-any': 'Any',
+    'job-english-none': 'No English required',
+    'job-english-required': 'English required',
+    'job-english-business': 'Business+',
+    'job-english-fluent': 'Fluent',
+    'job-english-only': 'English-only',
     'job-safety-filter-label': 'Public Safety',
     'job-safety-any': 'Any score',
     'job-safety-5': '5 stars',
@@ -223,6 +232,7 @@ const TRANSLATIONS = {
     'job-type-part-time': 'パートタイム',
     'job-type-freelance': 'フリーランス',
     'job-type-internship': 'インターン',
+    'job-deep-search-label': '実験的な求人元も検索',
     'btn-search-jobs': '求人を検索',
     'btn-cancel-search': '検索をキャンセル',
     'job-search-cancelled': '検索をキャンセルしました。',
@@ -237,6 +247,7 @@ const TRANSLATIONS = {
     'job-salary-label': '給与',
     'job-use-description': '求人票を使用',
     'job-view-posting': '求人を見る',
+    'job-open-maps': '地図で開く',
     'job-search-error-prefix': '求人検索に失敗しました: ',
     'job-filters-title': 'フィルター',
     'job-clear-filters': 'クリア',
@@ -254,6 +265,13 @@ const TRANSLATIONS = {
     'job-japanese-required': '日本語必須',
     'job-japanese-business': 'ビジネス以上',
     'job-japanese-fluent': '流暢',
+    'job-english-filter-label': '英語条件',
+    'job-english-any': 'すべて',
+    'job-english-none': '英語不要',
+    'job-english-required': '英語必須',
+    'job-english-business': 'ビジネス以上',
+    'job-english-fluent': '流暢',
+    'job-english-only': '英語のみ',
     'job-safety-filter-label': '治安スコア',
     'job-safety-any': 'すべて',
     'job-safety-5': '5つ星',
@@ -367,6 +385,7 @@ const TRANSLATIONS = {
     'job-type-part-time': '兼職',
     'job-type-freelance': '自由接案',
     'job-type-internship': '實習',
+    'job-deep-search-label': '深度搜尋實驗來源',
     'btn-search-jobs': '搜尋職缺',
     'btn-cancel-search': '取消搜尋',
     'job-search-cancelled': '已取消搜尋。',
@@ -381,6 +400,7 @@ const TRANSLATIONS = {
     'job-salary-label': '薪資',
     'job-use-description': '使用職缺內容',
     'job-view-posting': '查看職缺',
+    'job-open-maps': '在地圖開啟',
     'job-search-error-prefix': '職缺搜尋失敗：',
     'job-filters-title': '篩選',
     'job-clear-filters': '清除',
@@ -398,6 +418,13 @@ const TRANSLATIONS = {
     'job-japanese-required': '需日文',
     'job-japanese-business': '商務以上',
     'job-japanese-fluent': '流利',
+    'job-english-filter-label': '英文條件',
+    'job-english-any': '不限',
+    'job-english-none': '不需英文',
+    'job-english-required': '需英文',
+    'job-english-business': '商務以上',
+    'job-english-fluent': '流利',
+    'job-english-only': '僅英文',
     'job-safety-filter-label': '公共安全',
     'job-safety-any': '不限分數',
     'job-safety-5': '5 星',
@@ -1048,7 +1075,8 @@ async function searchJobs() {
   const country = document.getElementById('job-search-country').value;
   const location = document.getElementById('job-search-location-input').value.trim();
   const jobType = document.getElementById('job-search-type').value;
-  const params = new URLSearchParams({ title, country, location, job_type: jobType });
+  const deepSearch = document.getElementById('job-deep-search')?.checked ? 'true' : 'false';
+  const params = new URLSearchParams({ title, country, location, job_type: jobType, deep_search: deepSearch });
   const controller = new AbortController();
   const requestId = ++_jobSearchRequestId;
   _jobSearchController = controller;
@@ -1109,6 +1137,7 @@ function resetJobFilters() {
     input.checked = false;
   });
   document.getElementById('job-japanese-filter').value = 'any';
+  document.getElementById('job-english-filter').value = 'any';
   document.getElementById('job-safety-filter').value = 'any';
   document.getElementById('job-clearance-filter').value = 'any';
   document.getElementById('job-salary-only').checked = false;
@@ -1168,6 +1197,18 @@ function matchesJapaneseFilter(job, filterValue) {
   return true;
 }
 
+function matchesEnglishFilter(job, filterValue) {
+  if (filterValue === 'any') return true;
+  const requirement = (job.english_requirement || '').toLowerCase();
+  if (filterValue === 'none') return requirement.includes('no english');
+  if (!requirement || requirement.includes('no english')) return false;
+  if (filterValue === 'required') return true;
+  if (filterValue === 'business') return requirement.includes('business') || requirement.includes('fluent') || requirement.includes('english-only');
+  if (filterValue === 'fluent') return requirement.includes('fluent') || requirement.includes('english-only');
+  if (filterValue === 'only') return requirement.includes('english-only');
+  return true;
+}
+
 function matchesSafetyFilter(job, filterValue) {
   if (filterValue === 'any') return true;
   const minimum = Number(filterValue);
@@ -1188,6 +1229,7 @@ function applyJobFilters(keepSelection = true) {
   const sortBy = document.getElementById('job-search-sort').value;
   const selectedSources = getSelectedJobSources();
   const japaneseFilter = document.getElementById('job-japanese-filter').value;
+  const englishFilter = document.getElementById('job-english-filter').value;
   const safetyFilter = document.getElementById('job-safety-filter').value;
   const clearanceFilter = document.getElementById('job-clearance-filter').value;
   const salaryOnly = document.getElementById('job-salary-only').checked;
@@ -1198,6 +1240,7 @@ function applyJobFilters(keepSelection = true) {
     if (jobType !== 'any' && job.job_type !== jobType) return false;
     if (selectedSources.length && !selectedSources.includes(job.source)) return false;
     if (!matchesJapaneseFilter(job, japaneseFilter)) return false;
+    if (!matchesEnglishFilter(job, englishFilter)) return false;
     if (!matchesSafetyFilter(job, safetyFilter)) return false;
     if (!matchesClearanceFilter(job, clearanceFilter)) return false;
     if (salaryOnly && !job.salary) return false;
@@ -1242,12 +1285,42 @@ function renderJobResults(jobs, meta = {}) {
     findy: 'Findy',
     'michael-page': 'Michael Page',
     rgf: 'RGF Professional',
+    tokyodev: 'TokyoDev',
+    rakuten: 'Rakuten',
+    mercari: 'Mercari',
+    smartnews: 'SmartNews',
+    'woven-toyota': 'Woven by Toyota',
+    bizreach: 'BizReach',
+    doda: 'doda',
+    wexpats: 'WeXpats',
+    openwork: 'OpenWork',
+    forkwell: 'Forkwell',
+    paiza: 'Paiza',
+    lapras: 'LAPRAS',
     linkedin: 'LinkedIn',
     indeed: 'Indeed',
     dice: 'Dice',
     remoteok: 'RemoteOK',
     jobicy: 'Jobicy',
     arbeitnow: 'Arbeitnow',
+    clearancejobs: 'ClearanceJobs',
+    usajobs: 'USAJobs',
+    builtin: 'Built In',
+    wellfound: 'Wellfound',
+    weworkremotely: 'We Work Remotely',
+    ziprecruiter: 'ZipRecruiter',
+    glassdoor: 'Glassdoor',
+    '1111': '1111',
+    taiwanjobs: 'TaiwanJobs',
+    cake: 'Cake',
+    yourator: 'Yourator',
+    yes123: 'yes123',
+    '518': '518',
+    'meet-jobs': 'Meet.jobs',
+    'ats-greenhouse': 'Greenhouse',
+    'ats-lever': 'Lever',
+    'ats-ashby': 'Ashby',
+    'ats-workable': 'Workable',
   };
   const unavailable = Object.keys(meta.source_errors || {})
     .map(key => `${sourceLabels[key] || key} unavailable`);
@@ -1315,6 +1388,7 @@ function renderJobCard(job) {
     appendJobMetaBadge(meta, value);
   });
   appendJapaneseRequirementBadge(meta, job.japanese_requirement);
+  appendEnglishRequirementBadge(meta, job.english_requirement);
   appendSecurityClearanceBadge(meta, job.security_clearance);
   appendPublicSafetyBadge(meta, job);
 
@@ -1329,6 +1403,17 @@ function renderJobCard(job) {
     const salary = document.createElement('span');
     salary.textContent = `${t('job-salary-label')}: ${job.salary}`;
     details.appendChild(salary);
+  }
+  const mapsUrl = googleMapsUrlForJob(job);
+  if (mapsUrl) {
+    const mapsLink = document.createElement('a');
+    mapsLink.className = 'job-map-link';
+    mapsLink.href = mapsUrl;
+    mapsLink.target = '_blank';
+    mapsLink.rel = 'noopener noreferrer';
+    mapsLink.onclick = event => event.stopPropagation();
+    mapsLink.textContent = t('job-open-maps');
+    details.appendChild(mapsLink);
   }
 
   const desc = document.createElement('p');
@@ -1391,6 +1476,7 @@ function renderJobDetail(jobId) {
     appendJobMetaBadge(meta, value);
   });
   appendJapaneseRequirementBadge(meta, job.japanese_requirement);
+  appendEnglishRequirementBadge(meta, job.english_requirement);
   appendSecurityClearanceBadge(meta, job.security_clearance);
   appendPublicSafetyBadge(meta, job);
 
@@ -1418,6 +1504,16 @@ function renderJobDetail(jobId) {
     link.rel = 'noopener noreferrer';
     link.textContent = t('job-view-posting');
     actions.appendChild(link);
+  }
+  const mapsUrl = googleMapsUrlForJob(job);
+  if (mapsUrl) {
+    const mapsLink = document.createElement('a');
+    mapsLink.className = 'btn-job-action maps';
+    mapsLink.href = mapsUrl;
+    mapsLink.target = '_blank';
+    mapsLink.rel = 'noopener noreferrer';
+    mapsLink.textContent = t('job-open-maps');
+    actions.appendChild(mapsLink);
   }
 
   const hint = document.createElement('p');
@@ -1469,6 +1565,38 @@ function canHydrateJobDescription(job) {
       'tw.indeed.com',
       'dice.com',
       'www.dice.com',
+      'www.clearancejobs.com',
+      'www.usajobs.gov',
+      'builtin.com',
+      'www.builtin.com',
+      'weworkremotely.com',
+      'www.weworkremotely.com',
+      'www.ziprecruiter.com',
+      'www.glassdoor.com',
+      'www.1111.com.tw',
+      'www.518.com.tw',
+      'www.yes123.com.tw',
+      'www.cake.me',
+      'www.yourator.co',
+      'meet.jobs',
+      'www.tokyodev.com',
+      'www.bizreach.jp',
+      'doda.jp',
+      'we-xpats.com',
+      'www.openwork.jp',
+      'jobs.forkwell.com',
+      'paiza.jp',
+      'lapras.com',
+      'japan-job-en.rakuten.careers',
+      'japan-job-jp.rakuten.careers',
+      'global.rakuten.com',
+      'careers.mercari.com',
+      'woven.toyota',
+      'boards.greenhouse.io',
+      'job-boards.greenhouse.io',
+      'jobs.lever.co',
+      'app.ashbyhq.com',
+      'apply.workable.com',
     ].includes(host);
   } catch {
     return false;
@@ -1483,6 +1611,7 @@ function applyHydratedJobDescription(job, data) {
   job.description = data.description;
   job.description_source = data.description_source || 'detail-page';
   if (data.japanese_requirement) job.japanese_requirement = data.japanese_requirement;
+  if (data.english_requirement) job.english_requirement = data.english_requirement;
   if (data.security_clearance) job.security_clearance = data.security_clearance;
   if (data.public_safety_score) {
     job.public_safety_score = data.public_safety_score;
@@ -1538,8 +1667,71 @@ function prettyJobType(value) {
   return labels[value] || '';
 }
 
+function cleanJobMapLocation(location) {
+  let value = String(location || '').trim();
+  if (!value) return '';
+  const lower = value.toLowerCase();
+  if (/(^|\b)(remote|worldwide|global|anywhere|multiple locations|various locations|hybrid remote)(\b|$)/i.test(value)) return '';
+  if (/^(asia|apac|americas|north america|united states|usa|japan|taiwan)$/i.test(value)) return '';
+
+  value = value
+    .replace(/^japan\s*[-:]\s*/i, '')
+    .replace(/^taiwan\s*[-:]\s*/i, '')
+    .replace(/^location:\s*/i, '')
+    .replace(/\s*\([^)]*(office|園區|科技園區)[^)]*\)\s*/gi, ' ')
+    .replace(/\s*-\s*(roppongi|namba|hakata)\s+office\s*/i, ', ')
+    .replace(/,\s*,/g, ',')
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!value || value.length < 3) return '';
+  if (/^(remote|worldwide|global|anywhere|hybrid|onsite)$/i.test(value)) return '';
+  if (lower.includes('palo alto') && lower.includes('united states')) return value;
+  return value;
+}
+
+function googleMapsUrlForJob(job) {
+  const location = cleanJobMapLocation(job?.location);
+  if (!location) return '';
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+}
+
+function normalizeJobMetaBadgeKey(value) {
+  const normalized = String(value || '')
+    .toLowerCase()
+    .replace(/[\u2010-\u2015]/g, '-')
+    .replace(/[()]/g, ' ')
+    .replace(/[_/-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const aliases = {
+    'full time': 'job-type:full-time',
+    'fulltime': 'job-type:full-time',
+    '正社員': 'job-type:full-time',
+    '全職': 'job-type:full-time',
+    'part time': 'job-type:part-time',
+    'parttime': 'job-type:part-time',
+    'contract': 'job-type:contract',
+    'contractor': 'job-type:contract',
+    'freelance': 'job-type:freelance',
+    'intern': 'job-type:internship',
+    'internship': 'job-type:internship',
+  };
+  return aliases[normalized] || normalized;
+}
+
 function appendJobMetaBadge(container, value, className = '') {
   if (!value) return;
+  const key = `${className || 'generic'}:${normalizeJobMetaBadgeKey(value)}`;
+  const existingKeys = container.dataset.metaBadgeKeys
+    ? new Set(container.dataset.metaBadgeKeys.split('|').filter(Boolean))
+    : new Set();
+  if (existingKeys.has(key)) return;
+  existingKeys.add(key);
+  container.dataset.metaBadgeKeys = Array.from(existingKeys).join('|');
+
   const badge = document.createElement('span');
   badge.className = `job-meta-badge${className ? ` ${className}` : ''}`;
   badge.textContent = value;
@@ -1551,6 +1743,17 @@ function appendJapaneseRequirementBadge(container, requirement) {
   const className = requirement.toLowerCase().includes('no japanese')
     ? 'japanese-clear'
     : 'japanese-required';
+  appendJobMetaBadge(container, requirement, className);
+}
+
+function appendEnglishRequirementBadge(container, requirement) {
+  if (!requirement) return;
+  const lower = requirement.toLowerCase();
+  const className = lower.includes('no english')
+    ? 'english-clear'
+    : lower.includes('english-only')
+      ? 'english-only'
+      : 'english-required';
   appendJobMetaBadge(container, requirement, className);
 }
 
@@ -1587,6 +1790,7 @@ function formatJobPosting(job) {
     job.location ? `Location: ${job.location}` : '',
     prettyJobType(job.job_type) ? `Job Type: ${prettyJobType(job.job_type)}` : '',
     job.japanese_requirement ? `Japanese Requirement: ${job.japanese_requirement}` : '',
+    job.english_requirement ? `English Requirement: ${job.english_requirement}` : '',
     job.security_clearance ? `Security Clearance: ${job.security_clearance}` : '',
     publicSafety ? `Public Safety: ${publicSafety}` : '',
     job.salary ? `Salary: ${job.salary}` : '',

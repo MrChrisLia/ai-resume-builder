@@ -1,4 +1,7 @@
+import ssl
+
 from .core import *
+from .providers_generic import _extract_generic_board_jobs, _fetch_generic_board
 
 def _first_present(data: dict, *keys, default='') -> str:
     for key in keys:
@@ -229,3 +232,181 @@ def _fetch_104_browser_jobs(search: str, location: str = '', limit: int = 72, pa
     return jobs, False, error
 
 
+def _fetch_taiwan_generic_with_ssl_fallback(
+    source: str,
+    base_url: str,
+    params: dict,
+    search: str,
+    location: str = '',
+    limit: int = 30,
+) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip() or 'Taiwan'
+    cache_key = f"taiwan-generic:{source.lower()}:{keyword.lower() or '_latest'}:{city.lower()}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached['jobs'], True, cached.get('error')
+    url = base_url if not params else f'{base_url}?{urllib.parse.urlencode(params)}'
+    jobs = []
+    error = None
+    try:
+        req = urllib.request.Request(url, headers=_job_source_headers(source))
+        try:
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                raw = resp.read().decode('utf-8', errors='ignore')
+        except urllib.error.URLError as exc:
+            if not isinstance(exc.reason, ssl.SSLError):
+                raise
+            context = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=8, context=context) as resp:
+                raw = resp.read().decode('utf-8', errors='ignore')
+        jobs = _extract_generic_board_jobs(raw, source, base_url, keyword, city, 'Taiwan', limit)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+        logger.warning('%s search unavailable: %s', source, exc)
+        error = str(exc)
+    _cache_set(cache_key, jobs=jobs, error=error)
+    return jobs, False, error
+
+
+def _fetch_1111_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_taiwan_generic_with_ssl_fallback('1111', TAIWAN_1111_SEARCH_URL, {'ks': keyword}, keyword, location, limit)
+
+
+def _fetch_cake_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('Cake', TAIWAN_CAKE_SEARCH_URL, {'query': keyword}, keyword, location or 'Taiwan', 'Taiwan', limit)
+
+
+def _fetch_yourator_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('Yourator', TAIWAN_YOURATOR_SEARCH_URL, {'term': keyword}, keyword, location or 'Taiwan', 'Taiwan', limit)
+
+
+def _fetch_yes123_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_taiwan_generic_with_ssl_fallback('yes123', TAIWAN_YES123_SEARCH_URL, {'find_key1': keyword}, keyword, location, limit)
+
+
+def _fetch_518_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_taiwan_generic_with_ssl_fallback('518', TAIWAN_518_SEARCH_URL, {'kw': keyword}, keyword, location, limit)
+
+
+def _fetch_meet_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('Meet.jobs', TAIWAN_MEET_JOBS_SEARCH_URL, {'keywords': keyword}, keyword, location or 'Taiwan', 'Taiwan', limit)
+
+
+def _tw_field(record: dict, prefix: str) -> str:
+    for key, value in record.items():
+        if str(key).startswith(prefix):
+            return _clean_104_text(value)
+    return ''
+
+
+def _fetch_taiwanjobs_open_data(search: str, location: str = '', limit: int = 80) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    cache_key = f"taiwanjobs-open-data:{keyword.lower() or '_latest'}:{city.lower()}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached['jobs'], True, cached.get('error')
+
+    jobs = []
+    error = None
+    try:
+        raw = _fetch_text_url(TAIWAN_JOBS_OPEN_DATA_URL, timeout=12, headers={'User-Agent': 'Job Search and Resume Creator local dev', 'Accept': 'application/json'})
+        payload = json.loads(raw)
+        records = ((payload.get('result') or {}).get('records') if isinstance(payload, dict) else payload) or []
+        keyword_tokens = [token for token in re.split(r'[^a-z0-9+#.]+', keyword.lower()) if token]
+        keyword_tokens.extend(re.findall(r'[\u3400-\u9fff]+', keyword))
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            title = _tw_field(record, 'OCCU_DESC') or _tw_field(record, 'CJOB_NAME2') or _tw_field(record, 'CJOB_NAME1')
+            company = _tw_field(record, 'COMPNAME') or 'TaiwanJobs employer'
+            job_location = _tw_field(record, 'CITYNAME') or 'Taiwan'
+            description = _tw_field(record, 'JOB_DETAIL')
+            category = _tw_field(record, 'CJOB_NAME2') or _tw_field(record, 'CJOB_NAME1')
+            haystack = ' '.join((title, company, job_location, description, category)).lower()
+            if keyword_tokens and not all(token.lower() in haystack for token in keyword_tokens):
+                continue
+            salary_low = _tw_field(record, 'NT_L')
+            salary_high = _tw_field(record, 'NT_U')
+            salary_type = _tw_field(record, 'SALARYCD')
+            salary = ''
+            if salary_low or salary_high:
+                salary = f"{salary_type} {salary_low or ''} - {salary_high or ''}".strip().replace(' - ', ' - ')
+            url = _tw_field(record, 'URL_QUERY')
+            job_id = urllib.parse.parse_qs(urllib.parse.urlparse(url).query).get('HIRE_ID', [''])[0] or uuid.uuid5(uuid.NAMESPACE_URL, f'{company}:{title}:{url}').hex[:10]
+            normalized = {
+                'id': f'taiwanjobs-{job_id}',
+                'title': title,
+                'company': company,
+                'location': job_location,
+                'job_type': _map_job_type(_tw_field(record, 'WK_TYPE')),
+                'category': category,
+                'salary': salary,
+                'posted_at': _tw_field(record, 'TRANDATE'),
+                'description': _clean_104_description('\n'.join(part for part in (
+                    description,
+                    f"Experience: {_tw_field(record, 'EXPERIENCE')}" if _tw_field(record, 'EXPERIENCE') else '',
+                    f"Work time: {_tw_field(record, 'WKTIME')}" if _tw_field(record, 'WKTIME') else '',
+                    f"Education: {_tw_field(record, 'EDGRDESC')}" if _tw_field(record, 'EDGRDESC') else '',
+                ) if part))[:8000],
+                'url': url,
+                'source': 'TaiwanJobs',
+                'source_method': 'government-open-data',
+                'search_terms': keyword,
+                'search_location': city or 'Taiwan',
+                'strict_title_match': False,
+            }
+            if normalized['title'] and normalized['url']:
+                jobs.append(normalized)
+            if len(jobs) >= limit:
+                break
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+        logger.warning('TaiwanJobs open data unavailable: %s', exc)
+        error = str(exc)
+    _cache_set(cache_key, jobs=jobs, error=error)
+    return jobs, False, error
+
+
+def _fetch_taiwan_jobs(search: str, location: str = '', deep_search: bool = False) -> tuple[list[dict], bool, dict[str, str]]:
+    fetchers = {
+        'taiwanjobs': lambda: _fetch_taiwanjobs_open_data(search, location),
+        'cake': lambda: _fetch_cake_jobs(search, location),
+        'yes123': lambda: _fetch_yes123_jobs(search, location),
+        'meet-jobs': lambda: _fetch_meet_jobs(search, location),
+    }
+    if deep_search:
+        fetchers.update({
+            '1111': lambda: _fetch_1111_jobs(search, location),
+            'yourator': lambda: _fetch_yourator_jobs(search, location),
+            '518': lambda: _fetch_518_jobs(search, location),
+        })
+    jobs = []
+    cached = False
+    source_errors = {}
+    active_fetchers = {name: fetcher for name, fetcher in fetchers.items() if not _source_disabled(f'taiwan:{name}')}
+    if not active_fetchers:
+        return jobs, cached, source_errors
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(active_fetchers)) as executor:
+        futures = {executor.submit(fetcher): name for name, fetcher in active_fetchers.items()}
+        for future in concurrent.futures.as_completed(futures):
+            name = futures[future]
+            try:
+                source_jobs, source_cached, error = future.result()
+                jobs.extend(source_jobs)
+                cached = cached or source_cached
+                if error:
+                    source_errors[name] = error
+                    _record_source_failure(f'taiwan:{name}', error)
+                else:
+                    _record_source_success(f'taiwan:{name}')
+            except Exception as exc:
+                logger.warning('%s Taiwan provider failed unexpectedly: %s', name, exc)
+                source_errors[name] = str(exc)
+                _record_source_failure(f'taiwan:{name}', exc)
+    return jobs, cached, source_errors

@@ -159,7 +159,8 @@ def search_jobs():
     country = _v(str(request.args.get('country', 'any')).strip(), VALID_JOB_COUNTRIES, 'any')
     location = str(request.args.get('location', '')).strip()[:120]
     job_type = _v(str(request.args.get('job_type', 'any')).strip(), VALID_JOB_TYPES, 'any')
-    return jsonify(run_job_search(title, country, location, job_type))
+    deep_search = str(request.args.get('deep_search', '')).lower() in ('1', 'true', 'yes', 'on')
+    return jsonify(run_job_search(title, country, location, job_type, deep_search=deep_search))
 
 
 @app.route('/job-detail-description', methods=['POST'])

@@ -12,13 +12,14 @@ from .core import (
     _annotate_job_metadata,
     _fetch_detail_page_description,
 )
-from .providers_taiwan import _fetch_104_browser_jobs, _fetch_104_jobs
+from .providers_taiwan import _fetch_104_browser_jobs, _fetch_104_jobs, _fetch_taiwan_jobs
 from .providers_japan import _fetch_japan_jobs
 from .providers_us import _fetch_us_jobs, _fetch_remotive_jobs
 from .providers_global import _fetch_linkedin_jobs, _fetch_indeed_jobs
+from .providers_ats import _fetch_ats_jobs
 
 
-def search_jobs(title: str, country: str, location: str, job_type: str) -> dict:
+def search_jobs(title: str, country: str, location: str, job_type: str, deep_search: bool = False) -> dict:
     source_errors = {}
     cached = False
     jobs = []
@@ -34,9 +35,13 @@ def search_jobs(title: str, country: str, location: str, job_type: str) -> dict:
             jobs.extend(jobs_104_api)
             if error_104_api:
                 source_errors['104'] = error_104_api
+        taiwan_jobs, cached_taiwan, taiwan_errors = _fetch_taiwan_jobs(title, location, deep_search=deep_search)
+        cached = cached or cached_taiwan
+        jobs.extend(taiwan_jobs)
+        source_errors.update(taiwan_errors)
 
     if country in ('japan', 'any'):
-        japan_jobs, cached_japan, japan_errors = _fetch_japan_jobs(title, location)
+        japan_jobs, cached_japan, japan_errors = _fetch_japan_jobs(title, location, deep_search=deep_search)
         cached = cached or cached_japan
         jobs.extend(japan_jobs)
         source_errors.update(japan_errors)
@@ -60,6 +65,12 @@ def search_jobs(title: str, country: str, location: str, job_type: str) -> dict:
         if error_indeed:
             source_errors['indeed'] = error_indeed
 
+    if country in ('united_states', 'japan', 'taiwan', 'any'):
+        ats_jobs, cached_ats, ats_errors = _fetch_ats_jobs(title, limit=500)
+        cached = cached or cached_ats
+        jobs.extend(ats_jobs)
+        source_errors.update({f'ats-{key}': value for key, value in ats_errors.items()})
+
     remotive_jobs, cached_remotive = _fetch_remotive_jobs(title)
     cached = cached or cached_remotive
     jobs.extend(remotive_jobs)
@@ -79,6 +90,7 @@ def search_jobs(title: str, country: str, location: str, job_type: str) -> dict:
         'source': ', '.join(source_names) if source_names else 'Sample',
         'source_methods': source_methods,
         'source_errors': source_errors,
+        'deep_search': deep_search,
         'japan_sources': JAPAN_SOURCE_DIRECTORY if country in ('japan', 'any') else {},
     }
 
@@ -112,6 +124,7 @@ def job_detail_description(data: dict) -> tuple[dict, int]:
         'description': enriched['description'],
         'description_source': enriched.get('description_source'),
         'japanese_requirement': enriched.get('japanese_requirement', ''),
+        'english_requirement': enriched.get('english_requirement', ''),
         'security_clearance': enriched.get('security_clearance', ''),
         'public_safety_score': enriched.get('public_safety_score'),
         'public_safety_label': enriched.get('public_safety_label', ''),

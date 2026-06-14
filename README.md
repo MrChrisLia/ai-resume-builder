@@ -6,7 +6,7 @@ An AI-powered resume builder that generates tailored, ATS-optimized resumes, cov
 
 - **Resume generation** — Rewrites bullets with strong action verbs, weaves in job keywords, writes a targeted summary
 - **Job fit analysis** — Scores candidate match (1–10) with strengths and gaps, including language requirement checks
-- **Job search** — Search roles for the United States, Japan, and Taiwan; Taiwan searches use a headless-browser 104 POC with browser-session detail extraction, then supplement with other sources
+- **Job search** — Search roles for the United States, Japan, and Taiwan across direct boards, LinkedIn/Indeed, ATS feeds (Greenhouse, Lever, Ashby, Workable), Taiwan 104/TaiwanJobs/Cake/yes123/Meet.jobs, Japan bilingual/dev boards, major Japan company feeds such as Rakuten, Mercari, SmartNews, and Woven by Toyota, and US tech/clearance/remote boards. Optional deep search can try slower experimental sources such as 1111, 518, Yourator, BizReach, doda, OpenWork, WeXpats, Forkwell, Paiza, and LAPRAS.
 - **Cover letter** — Professional 3–4 paragraph letter or formal Japanese business letter format
 - **Interview prep** — 10 targeted questions (behavioral, technical, situational, motivation, growth) with talking points
 - **4 resume templates** — Modern, Classic, Minimal, Japanese (職務経歴書)

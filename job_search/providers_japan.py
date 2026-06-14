@@ -1,4 +1,6 @@
 from .core import *
+from .providers_ats import _fetch_lever_board, _fetch_workable_board
+from .providers_generic import _fetch_generic_board
 
 def _parse_gaijinpot_summary(summary: str) -> tuple[str, str, str]:
     summary = _clean_job_text(summary)
@@ -690,7 +692,275 @@ def _fetch_rgf_jobs(search: str, location: str = '', limit: int = 30, pages: int
     return jobs, False, error
 
 
-def _fetch_japan_jobs(search: str, location: str = '') -> tuple[list[dict], bool, dict[str, str]]:
+def _fetch_tokyodev_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('TokyoDev', TOKYODEV_JOBS_URL, {'search': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _rakuten_location(raw_location: str, href: str) -> str:
+    job_location = re.sub(r'^\s*Location:\s*', '', _clean_job_text(raw_location), flags=re.I).strip()
+    if job_location and job_location.lower() != 'japan':
+        return _japan_location(job_location)
+    city = _regex_first(r'/job/([^/]+)/', href).replace('-', ' ').title()
+    return _japan_location(f'{city}, Japan' if city else 'Japan')
+
+
+def _fetch_rakuten_jobs(search: str, location: str = '', limit: int = 45, pages: int = 2) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    cache_key = f"rakuten:{keyword.lower() or '_latest'}:{city.lower()}:{limit}:{pages}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached['jobs'], True, cached.get('error')
+
+    jobs = []
+    error = None
+    try:
+        for page in range(1, pages + 1):
+            params = {}
+            if keyword:
+                params['keywords'] = keyword
+            if page > 1:
+                params['p'] = str(page)
+            url = RAKUTEN_JAPAN_SEARCH_URL if not params else f'{RAKUTEN_JAPAN_SEARCH_URL}?{urllib.parse.urlencode(params)}'
+            raw = _fetch_text_url(url, timeout=10, headers=_job_source_headers('Rakuten'))
+            cards = re.findall(
+                r'<li>\s*<a href="([^"]+)"\s+data-job-id="([^"]+)">(.*?)</a>',
+                raw or '',
+                flags=re.I | re.S,
+            )
+            if not cards:
+                break
+            for href, job_id, block in cards:
+                title = _regex_first(r'<h2>\s*(.*?)\s*</h2>', block)
+                if not title:
+                    continue
+                category = re.sub(
+                    r'^\s*Category:\s*',
+                    '',
+                    _regex_first(r'class="job-category"[^>]*>\s*(.*?)\s*</span>', block),
+                    flags=re.I,
+                ).strip()
+                raw_location = _regex_first(r'class="job-location"[^>]*>\s*(.*?)\s*</span>', block)
+                link = _absolute_url('https://japan-job-en.rakuten.careers', href)
+                normalized = {
+                    'id': f'rakuten-{job_id or uuid.uuid5(uuid.NAMESPACE_URL, link).hex[:10]}',
+                    'title': title,
+                    'company': 'Rakuten',
+                    'location': _rakuten_location(raw_location, href),
+                    'job_type': '',
+                    'category': category,
+                    'salary': '',
+                    'posted_at': '',
+                    'description': _clean_job_description('\n'.join(part for part in (
+                        category,
+                        raw_location,
+                        'Direct Rakuten careers posting',
+                    ) if part)),
+                    'url': link,
+                    'source': 'Rakuten',
+                    'source_method': 'public-html',
+                    'search_terms': keyword,
+                    'strict_title_match': False,
+                }
+                if normalized['title'] and normalized['url']:
+                    jobs.append(normalized)
+                if len(jobs) >= limit:
+                    break
+            if len(jobs) >= limit:
+                break
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as exc:
+        logger.warning('Rakuten search unavailable: %s', exc)
+        error = str(exc)
+
+    _cache_set(cache_key, jobs=jobs, error=error)
+    return jobs, False, error
+
+
+def _fetch_japan_ats_company_jobs(source_key: str, source_label: str, fetcher, search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    cache_key = f"japan-company:{source_key}:{keyword.lower() or '_latest'}:{city.lower()}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached['jobs'], True, cached.get('error')
+
+    jobs, error = fetcher(keyword, limit)
+    jobs = [
+        {
+            **job,
+            'source': source_label,
+            'source_platform': job.get('source'),
+            'source_method': job.get('source_method') or 'ats-api',
+        }
+        for job in jobs
+    ]
+    _cache_set(cache_key, jobs=jobs, error=error)
+    return jobs, False, error
+
+
+def _extract_mercari_default_jobs(raw: str) -> list[dict]:
+    start = raw.find('\\"defaultJobs\\":')
+    if start < 0:
+        return []
+    array_start = raw.find('[', start)
+    if array_start < 0:
+        return []
+    depth = 0
+    end = None
+    for index, char in enumerate(raw[array_start:], array_start):
+        if char == '[':
+            depth += 1
+        elif char == ']':
+            depth -= 1
+            if depth == 0:
+                end = index + 1
+                break
+    if not end:
+        return []
+    try:
+        return json.loads(raw[array_start:end].replace('\\"', '"'))
+    except json.JSONDecodeError:
+        return []
+
+
+def _fetch_mercari_direct_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    cache_key = f"mercari-direct:{keyword.lower() or '_latest'}:{city.lower()}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached['jobs'], True, cached.get('error')
+
+    jobs = []
+    error = None
+    location_names = {
+        'roppongi': 'Tokyo - Roppongi Office, Japan',
+        'namba': 'Osaka - Namba Office, Japan',
+        'hakata': 'Fukuoka - Hakata Office, Japan',
+    }
+    try:
+        raw = _fetch_text_url('https://careers.mercari.com/en/jobs/', timeout=10, headers=_job_source_headers('Mercari'))
+        for item in _extract_mercari_default_jobs(raw):
+            title = _clean_job_text(item.get('title'))
+            if not title:
+                continue
+            shortcode = re.sub(r'-\d+$', '', str(item.get('slug') or '').strip())
+            locations = [
+                location_names.get(str(slug), str(slug).replace('-', ' ').title())
+                for slug in item.get('locations') or []
+            ]
+            categories = [str(value).replace('-', ' ').title() for value in item.get('jobCategories') or []]
+            departments = [str(value).replace('-', ' ').title() for value in item.get('departments') or []]
+            employment_types = [str(value).replace('-', ' ').title() for value in item.get('employmentTypes') or []]
+            url = f'https://apply.workable.com/j/{shortcode}' if shortcode else str(item.get('guid') or '')
+            normalized = {
+                'id': f"mercari-{shortcode or uuid.uuid5(uuid.NAMESPACE_URL, str(item.get('guid') or title)).hex[:10]}",
+                'title': title,
+                'company': 'Mercari',
+                'location': ', '.join(locations) or 'Tokyo, Japan',
+                'job_type': _map_job_type(' '.join(employment_types)),
+                'category': ', '.join(categories + departments),
+                'salary': '',
+                'posted_at': '',
+                'description': _clean_job_description('\n'.join(part for part in (
+                    f"Categories: {', '.join(categories)}" if categories else '',
+                    f"Departments: {', '.join(departments)}" if departments else '',
+                    f"Employment: {', '.join(employment_types)}" if employment_types else '',
+                    'Direct Mercari careers posting',
+                ) if part)),
+                'url': url,
+                'source': 'Mercari',
+                'source_method': 'public-next-data',
+                'source_platform': 'Mercari Careers',
+                'search_terms': keyword,
+                'strict_title_match': False,
+            }
+            if normalized['title'] and normalized['url']:
+                jobs.append(normalized)
+            if len(jobs) >= limit:
+                break
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as exc:
+        logger.warning('Mercari careers search unavailable: %s', exc)
+        error = str(exc)
+
+    _cache_set(cache_key, jobs=jobs, error=error)
+    return jobs, False, error
+
+
+def _fetch_mercari_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    jobs, cached, error = _fetch_mercari_direct_jobs(search, location, limit)
+    if jobs:
+        return jobs, cached, error
+    fallback_jobs, fallback_cached, fallback_error = _fetch_japan_ats_company_jobs(
+        'mercari',
+        'Mercari',
+        lambda keyword, board_limit: _fetch_workable_board('mercari', keyword, board_limit),
+        search,
+        location,
+        limit,
+    )
+    return fallback_jobs, cached or fallback_cached, error or fallback_error
+
+
+def _fetch_smartnews_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    return _fetch_japan_ats_company_jobs(
+        'smartnews',
+        'SmartNews',
+        lambda keyword, board_limit: _fetch_workable_board('smartnews', keyword, board_limit),
+        search,
+        location,
+        limit,
+    )
+
+
+def _fetch_woven_toyota_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    return _fetch_japan_ats_company_jobs(
+        'woven-toyota',
+        'Woven by Toyota',
+        lambda keyword, board_limit: _fetch_lever_board('woven-by-toyota', keyword, board_limit),
+        search,
+        location,
+        limit,
+    )
+
+
+def _fetch_bizreach_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('BizReach', BIZREACH_SEARCH_URL, {'keyword': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_doda_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('doda', DODA_SEARCH_URL, {'k': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_wexpats_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('WeXpats', WEXPATS_SEARCH_URL, {'keyword': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_openwork_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('OpenWork', OPENWORK_SEARCH_URL, {'keyword': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_forkwell_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('Forkwell', FORKWELL_SEARCH_URL, {'q': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_paiza_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('Paiza', PAIZA_SEARCH_URL, {'keyword': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_lapras_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('LAPRAS', LAPRAS_SEARCH_URL, {'q': keyword}, keyword, location or 'Japan', 'Japan', limit)
+
+
+def _fetch_japan_jobs(search: str, location: str = '', deep_search: bool = False) -> tuple[list[dict], bool, dict[str, str]]:
     jobs = []
     cached = False
     source_errors = {}
@@ -705,9 +975,27 @@ def _fetch_japan_jobs(search: str, location: str = '') -> tuple[list[dict], bool
         'findy': lambda: _fetch_findy_jobs(search, location),
         'michael-page': lambda: _fetch_michael_page_jobs(search, location),
         'rgf': lambda: _fetch_rgf_jobs(search, location),
+        'tokyodev': lambda: _fetch_tokyodev_jobs(search, location),
+        'rakuten': lambda: _fetch_rakuten_jobs(search, location),
+        'mercari': lambda: _fetch_mercari_jobs(search, location),
+        'smartnews': lambda: _fetch_smartnews_jobs(search, location),
+        'woven-toyota': lambda: _fetch_woven_toyota_jobs(search, location),
     }
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(fetchers)) as executor:
-        futures = {executor.submit(fetcher): name for name, fetcher in fetchers.items()}
+    if deep_search:
+        fetchers.update({
+            'bizreach': lambda: _fetch_bizreach_jobs(search, location),
+            'doda': lambda: _fetch_doda_jobs(search, location),
+            'wexpats': lambda: _fetch_wexpats_jobs(search, location),
+            'openwork': lambda: _fetch_openwork_jobs(search, location),
+            'forkwell': lambda: _fetch_forkwell_jobs(search, location),
+            'paiza': lambda: _fetch_paiza_jobs(search, location),
+            'lapras': lambda: _fetch_lapras_jobs(search, location),
+        })
+    active_fetchers = {name: fetcher for name, fetcher in fetchers.items() if not _source_disabled(f'japan:{name}')}
+    if not active_fetchers:
+        return jobs, cached, source_errors
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(active_fetchers)) as executor:
+        futures = {executor.submit(fetcher): name for name, fetcher in active_fetchers.items()}
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
             try:
@@ -716,8 +1004,11 @@ def _fetch_japan_jobs(search: str, location: str = '') -> tuple[list[dict], bool
                 cached = cached or source_cached
                 if error:
                     source_errors[name] = error
+                    _record_source_failure(f'japan:{name}', error)
+                else:
+                    _record_source_success(f'japan:{name}')
             except Exception as exc:
                 logger.warning('%s Japan provider failed unexpectedly: %s', name, exc)
                 source_errors[name] = str(exc)
+                _record_source_failure(f'japan:{name}', exc)
     return jobs, cached, source_errors
-

@@ -1,4 +1,5 @@
 from .core import *
+from .providers_generic import _fetch_generic_board
 
 def _normalize_remotive_job(job: dict) -> dict:
     description = _strip_html(job.get('description', ''))
@@ -282,18 +283,75 @@ def _fetch_dice_jobs(search: str, location: str = '', limit: int = 40, pages: in
     return jobs, False, error
 
 
+def _fetch_clearancejobs_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    params = {'keywords': keyword}
+    if city:
+        params['location'] = city
+    return _fetch_generic_board('ClearanceJobs', CLEARANCEJOBS_SEARCH_URL, params, keyword, city or 'United States', 'United States', limit)
+
+
+def _fetch_usajobs_jobs(search: str, location: str = '', limit: int = 30) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    params = {'k': keyword}
+    if city:
+        params['l'] = city
+    return _fetch_generic_board('USAJobs', USAJOBS_SEARCH_URL, params, keyword, city or 'United States', 'United States', limit)
+
+
+def _fetch_builtin_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    base = f'{BUILTIN_SEARCH_URL}/remote/{urllib.parse.quote(keyword)}' if keyword else BUILTIN_SEARCH_URL
+    return _fetch_generic_board('Built In', base, {}, keyword, city or 'Remote, United States', 'United States', limit)
+
+
+def _fetch_wellfound_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('Wellfound', WELLFOUND_SEARCH_URL, {'q': keyword}, keyword, location or 'United States', 'United States', limit)
+
+
+def _fetch_weworkremotely_jobs(search: str, location: str = '', limit: int = 35) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    return _fetch_generic_board('We Work Remotely', WEWORKREMOTELY_SEARCH_URL, {'term': keyword}, keyword, 'Remote, United States', 'United States', limit)
+
+
+def _fetch_ziprecruiter_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    return _fetch_generic_board('ZipRecruiter', ZIPRECRUITER_SEARCH_URL, {'search': keyword, 'location': city}, keyword, city or 'United States', 'United States', limit)
+
+
+def _fetch_glassdoor_jobs(search: str, location: str = '', limit: int = 25) -> tuple[list[dict], bool, str | None]:
+    keyword = re.sub(r'\s+', ' ', search or '').strip()
+    city = re.sub(r'\s+', ' ', location or '').strip()
+    return _fetch_generic_board('Glassdoor', GLASSDOOR_SEARCH_URL, {'sc.keyword': keyword, 'locT': 'N', 'locId': city}, keyword, city or 'United States', 'United States', limit)
+
+
 def _fetch_us_jobs(search: str, location: str = '') -> tuple[list[dict], bool, dict[str, str]]:
     providers = {
         'dice': lambda: _fetch_dice_jobs(search, location, limit=45, pages=1),
         'remoteok': lambda: _fetch_remoteok_jobs(search, limit=45),
         'jobicy': lambda: _fetch_jobicy_jobs(search, limit=45),
         'arbeitnow': lambda: _fetch_arbeitnow_jobs(search, limit=45),
+        'clearancejobs': lambda: _fetch_clearancejobs_jobs(search, location),
+        'usajobs': lambda: _fetch_usajobs_jobs(search, location),
+        'builtin': lambda: _fetch_builtin_jobs(search, location),
+        'wellfound': lambda: _fetch_wellfound_jobs(search, location),
+        'weworkremotely': lambda: _fetch_weworkremotely_jobs(search, location),
+        'ziprecruiter': lambda: _fetch_ziprecruiter_jobs(search, location),
+        'glassdoor': lambda: _fetch_glassdoor_jobs(search, location),
     }
     jobs = []
     cached = False
     source_errors = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(providers)) as executor:
-        futures = {executor.submit(fetcher): name for name, fetcher in providers.items()}
+    active_providers = {name: fetcher for name, fetcher in providers.items() if not _source_disabled(f'us:{name}')}
+    if not active_providers:
+        return jobs, cached, source_errors
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(active_providers)) as executor:
+        futures = {executor.submit(fetcher): name for name, fetcher in active_providers.items()}
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
             try:
@@ -302,8 +360,11 @@ def _fetch_us_jobs(search: str, location: str = '') -> tuple[list[dict], bool, d
                 cached = cached or source_cached
                 if error:
                     source_errors[name] = error
+                    _record_source_failure(f'us:{name}', error)
+                else:
+                    _record_source_success(f'us:{name}')
             except Exception as exc:
                 logger.warning('%s US provider failed unexpectedly: %s', name, exc)
                 source_errors[name] = str(exc)
+                _record_source_failure(f'us:{name}', exc)
     return jobs, cached, source_errors
-
