@@ -43,6 +43,19 @@ def _lang_str(l):
     return name
 
 
+def _cert_str(cert):
+    """Format certification data, supporting old string values and new name/year objects."""
+    if isinstance(cert, str):
+        return cert.strip()
+    if not isinstance(cert, dict):
+        return ''
+    name = str(cert.get('name') or cert.get('cert') or '').strip()
+    year = str(cert.get('year') or '').strip()
+    if name and year:
+        return f'{name} ({year})'
+    return name
+
+
 def _set_font(run, size_pt, bold=False, italic=False, color=None, font_name=None):
     run.font.size = Pt(size_pt)
     run.bold = bold
@@ -299,7 +312,7 @@ def _build_modern_docx(data: dict, output_path: str, language: str = 'english'):
                 p2.paragraph_format.space_after = Pt(2)
                 _set_font(p2.add_run(proj['description']), 10)
 
-    certs = [c for c in data.get('certifications', []) if c]
+    certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
     if certs:
         _modern_section_heading(doc, lbl['certifications'])
         for cert in certs:
@@ -403,7 +416,7 @@ def _build_classic_docx(data: dict, output_path: str, language: str = 'english')
                 p2.paragraph_format.space_after = Pt(2)
                 _set_font(p2.add_run(proj['description']), 10, font_name='Cambria')
 
-    certs = [c for c in data.get('certifications', []) if c]
+    certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
     if certs:
         _classic_section_heading(doc, lbl['certifications'])
         for cert in certs:
@@ -507,7 +520,7 @@ def _build_minimal_docx(data: dict, output_path: str, language: str = 'english')
                 p2.paragraph_format.space_after = Pt(2)
                 _set_font(p2.add_run(proj['description']), 9.5, color=GR2)
 
-    certs = [c for c in data.get('certifications', []) if c]
+    certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
     if certs:
         _minimal_section_heading(doc, lbl['certifications'])
         for cert in certs:
@@ -672,7 +685,7 @@ def _build_japanese_docx(data: dict, output_path: str, language: str = 'japanese
                 _set_font(pe.add_run('　　　　　　　　　　　　　　　　　　以上'), 9, color=JGR, font_name='Yu Gothic')
 
     # ── 免許・資格 ──────────────────────────────────────────────────────────
-    certs = [c for c in data.get('certifications', []) if c]
+    certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
     if certs:
         _jp_section_heading(doc, lbl['certifications'])
         for cert in certs:
@@ -897,7 +910,7 @@ def _build_taiwanese_docx(data: dict, output_path: str, language: str = 'taiwane
                 p2.paragraph_format.space_after = Pt(2)
                 _set_font(p2.add_run(proj['description']), 10, font_name=TW_FONT)
 
-    certs = [c for c in data.get('certifications', []) if c]
+    certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
     if certs:
         _tw_section_heading(doc, lbl['certifications'])
         for cert in certs:
@@ -1182,7 +1195,7 @@ def _render_html(data: dict, template: str = 'modern', language: str = 'english'
         sections.append(f'<div class="section-title">{prefix}{labels["projects"]}</div>{proj_html}')
 
     def _certs_sec():
-        certs = [c for c in data.get('certifications', []) if c]
+        certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
         if not certs: return
         cert_html = ''.join(f'<li>{_e(c)}</li>' for c in certs)
         sections.append(f'<div class="section-title">{prefix}{labels["certifications"]}</div><ul>{cert_html}</ul>')
@@ -1373,7 +1386,7 @@ def build_markdown(data: dict, output_path: str):
             proj_lines += [f"### {p.get('name','')}{tech}", p.get('description',''), '']
         sec('Projects', proj_lines)
 
-    certs = [c for c in data.get('certifications', []) if c]
+    certs = [_cert_str(c) for c in data.get('certifications', []) if _cert_str(c)]
     if certs: sec('Certifications / Professional Licenses', [f"- {c}" for c in certs])
 
     with open(output_path, 'w', encoding='utf-8') as f:

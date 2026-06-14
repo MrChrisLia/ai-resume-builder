@@ -35,7 +35,6 @@ REMOTEOK_API_URL = 'https://remoteok.com/api'
 ARBEITNOW_API_URL = 'https://www.arbeitnow.com/api/job-board-api'
 JOBICY_API_URL = 'https://jobicy.com/api/v2/remote-jobs'
 DICE_SEARCH_URL = 'https://www.dice.com/jobs'
-GOOGLE_CSE_URL = 'https://www.googleapis.com/customsearch/v1'
 TAIWAN_104_SEARCH_URL = 'https://www.104.com.tw/jobs/search/list'
 TAIWAN_104_DETAIL_URL = 'https://www.104.com.tw/job/ajax/content/{job_id}'
 TAIWAN_104_BROWSER_SCRIPT = os.path.join(BASE_DIR, 'scripts', 'scrape_104_browser.js')

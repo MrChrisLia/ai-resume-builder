@@ -55,13 +55,6 @@ GEMINI_API_KEY=your_key_here
 
 Get a free API key at [aistudio.google.com](https://aistudio.google.com/app/apikey).
 
-Optional Google job-search enrichment uses Google Programmable Search:
-
-```
-GOOGLE_CSE_API_KEY=your_google_custom_search_key
-GOOGLE_CSE_ID=your_search_engine_id
-```
-
 ### 4. Run the app
 
 ```bash

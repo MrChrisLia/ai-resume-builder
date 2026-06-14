@@ -16,7 +16,6 @@ from .providers_taiwan import _fetch_104_browser_jobs, _fetch_104_jobs
 from .providers_japan import _fetch_japan_jobs
 from .providers_us import _fetch_us_jobs, _fetch_remotive_jobs
 from .providers_global import _fetch_linkedin_jobs, _fetch_indeed_jobs
-from .providers_google import _fetch_google_jobs
 
 
 def search_jobs(title: str, country: str, location: str, job_type: str) -> dict:
@@ -60,12 +59,6 @@ def search_jobs(title: str, country: str, location: str, job_type: str) -> dict:
         jobs.extend(indeed_jobs)
         if error_indeed:
             source_errors['indeed'] = error_indeed
-
-        google_jobs, cached_google, error_google = _fetch_google_jobs(title, country, location, limit=24)
-        cached = cached or cached_google
-        jobs.extend(google_jobs)
-        if error_google:
-            source_errors['google'] = error_google
 
     remotive_jobs, cached_remotive = _fetch_remotive_jobs(title)
     cached = cached or cached_remotive

@@ -47,7 +47,9 @@ RESUME_SCHEMA = """
   "projects": [
     {"name": "string", "description": "string", "technologies": "string"}
   ],
-  "certifications": ["string"]
+  "certifications": [
+    {"name": "string", "year": "string or empty string"}
+  ]
 }
 """
 
@@ -80,7 +82,7 @@ PROFILE_SCHEMA = """
   "skills": [{"category": "string", "items": ["string"]}],
   "languages": [{"language": "string", "proficiency": "string", "certificate": "string or empty string"}],
   "projects": [{"name": "string", "technologies": "string", "description": "string"}],
-  "certifications": ["string"],
+  "certifications": [{"name": "string", "year": "string or empty string"}],
   "extra_info": "string"
 }
 """
@@ -207,8 +209,11 @@ Instructions:
 5. Group and order skills by job relevance.
 6. Include languages if relevant to the role.
 7. Incorporate extra_info items (awards, publications, etc.) where relevant.
-8. ONLY use provided information — never fabricate.
-9. Bullets: one line each, max ~100 characters.
+8. CRITICAL FACTUAL ACCURACY: Do not create, invent, infer, or embellish fake experience.
+   Use only facts present in the candidate information or additional notes. Do not invent employers, job titles, dates, degrees, certifications, projects, clients, tools, technologies, metrics, leadership scope, clearance status, language ability, or responsibilities. If a job keyword is not supported by the candidate profile, do not add it as experience.
+9. You may rephrase and reorder provided facts for clarity and ATS relevance, but you must not add unsupported claims.
+10. Preserve certification years only when provided. If the candidate did not provide a certification year, return an empty string for that certification's year.
+11. Bullets: one line each, max ~100 characters.
 
 Return ONLY valid JSON (no markdown fences):
 {RESUME_SCHEMA}

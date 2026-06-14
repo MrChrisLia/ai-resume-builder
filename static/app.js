@@ -151,6 +151,7 @@ const TRANSLATIONS = {
     'opt-conversational': 'Conversational', 'opt-basic': 'Basic',
     'tpl-project-name': 'Project Name', 'tpl-technologies': 'Technologies',
     'tpl-description': 'Description', 'tpl-cert-label': 'Certification',
+    'tpl-cert-year': 'Year Achieved',
   },
   ja: {
     'powered-by': 'Gemini搭載',
@@ -294,6 +295,7 @@ const TRANSLATIONS = {
     'opt-conversational': '日常会話レベル', 'opt-basic': '基礎レベル',
     'tpl-project-name': 'プロジェクト名', 'tpl-technologies': '使用技術',
     'tpl-description': '概要', 'tpl-cert-label': '資格・免許',
+    'tpl-cert-year': '取得年',
   },
   tw: {
     'powered-by': '由 Gemini 驅動',
@@ -437,6 +439,7 @@ const TRANSLATIONS = {
     'opt-conversational': '日常對話', 'opt-basic': '基礎',
     'tpl-project-name': '專案名稱', 'tpl-technologies': '使用技術',
     'tpl-description': '專案描述', 'tpl-cert-label': '證照',
+    'tpl-cert-year': '取得年份',
   },
 };
 
@@ -838,8 +841,15 @@ function _populateForm(data) {
   certList.innerHTML = '';
   (data.certifications || []).forEach(c => {
     certList.appendChild(cloneTemplate('tpl-cert'));
-    const input = certList.lastElementChild.querySelector('[name="cert"]');
-    if (input) input.value = c;
+    const block = certList.lastElementChild;
+    const certInput = block.querySelector('[name="cert"]');
+    const yearInput = block.querySelector('[name="year"]');
+    if (typeof c === 'string') {
+      if (certInput) certInput.value = c;
+    } else {
+      if (certInput) certInput.value = c.name || c.cert || '';
+      if (yearInput) yearInput.value = c.year || '';
+    }
   });
 }
 
@@ -870,7 +880,10 @@ function collectCandidate() {
 
   const certs = Array.from(
     document.querySelectorAll('#certs-list .entry-block')
-  ).map(b => b.querySelector('[name="cert"]')?.value.trim()).filter(Boolean);
+  ).map(b => ({
+    name: b.querySelector('[name="cert"]')?.value.trim() || '',
+    year: b.querySelector('[name="year"]')?.value.trim() || '',
+  })).filter(cert => cert.name);
 
   const photoEl = document.getElementById('photo-preview');
   const photo = (!photoEl.classList.contains('hidden') && photoEl.src.startsWith('data:'))
@@ -1235,7 +1248,6 @@ function renderJobResults(jobs, meta = {}) {
     remoteok: 'RemoteOK',
     jobicy: 'Jobicy',
     arbeitnow: 'Arbeitnow',
-    google: 'Google Search',
   };
   const unavailable = Object.keys(meta.source_errors || {})
     .map(key => `${sourceLabels[key] || key} unavailable`);

@@ -711,9 +711,15 @@
 <template id="tpl-cert">
   <div class="entry-block cert-block">
     <button class="btn-remove" onclick="removeBlock(this)" title="Remove">✕</button>
-    <div class="field">
-      <label data-i18n="tpl-cert-label">Certification</label>
-      <input type="text" name="cert" placeholder="AWS Certified Solutions Architect – Associate (2024)">
+    <div class="field-grid two">
+      <div class="field">
+        <label data-i18n="tpl-cert-label">Certification</label>
+        <input type="text" name="cert" placeholder="AWS Certified Solutions Architect – Associate">
+      </div>
+      <div class="field">
+        <label data-i18n="tpl-cert-year">Year Achieved</label>
+        <input type="text" name="year" placeholder="2024">
+      </div>
     </div>
   </div>
 </template>
