@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Resume Builder</title>
+  <title>Job Search and Resume Creator</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
         <path d="M7 20L14 8L21 20" stroke="#6ee7b7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M9.5 16h9" stroke="#6ee7b7" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <span>AI Resume Builder</span>
+      <span>Job Search and Resume Creator</span>
     </div>
     <div class="header-actions">
       <p class="tagline" data-i18n="powered-by">Powered by Gemini</p>
@@ -31,6 +31,12 @@
 </header>
 
 <main>
+  <div class="workspace-tabs" role="tablist" aria-label="Workspace">
+    <button class="workspace-tab selected" id="tab-job-search-btn" role="tab" aria-selected="true" aria-controls="job-search-tab" onclick="switchMainTab('job-search')" data-i18n="tab-job-search">Job Search</button>
+    <button class="workspace-tab" id="tab-builder-btn" role="tab" aria-selected="false" aria-controls="resume-builder-tab" onclick="switchMainTab('builder')" data-i18n="tab-builder">Resume Builder</button>
+  </div>
+
+  <section class="tab-panel" id="resume-builder-tab" role="tabpanel" aria-labelledby="tab-builder-btn">
   <div class="two-col">
 
     <!-- ════════════════ LEFT — Profile ════════════════ -->
@@ -434,6 +440,144 @@
 
     </section><!-- /panel-job -->
   </div><!-- /two-col -->
+  </section><!-- /resume-builder-tab -->
+
+  <section class="tab-panel active" id="job-search-tab" role="tabpanel" aria-labelledby="tab-job-search-btn">
+    <section class="job-board-shell">
+      <div class="job-board-top">
+        <div>
+          <h2 class="job-board-title" data-i18n="job-board-title">Find your next role</h2>
+          <p class="job-board-subtitle" data-i18n="job-board-subtitle">Search remote postings, compare listings, and send the best match into your resume workflow.</p>
+        </div>
+
+        <div class="job-search-bar">
+          <div class="job-search-field">
+            <div class="field">
+              <label data-i18n="job-title-label">Job Title or Keywords</label>
+              <input type="text" id="job-search-title-input" data-i18n-placeholder="job-title-placeholder" placeholder="Product Manager, React, Data Analyst">
+            </div>
+          </div>
+          <div class="job-search-field">
+            <div class="field">
+              <label data-i18n="job-location-search-label">Location</label>
+              <input type="text" id="job-search-location-input" data-i18n-placeholder="job-location-placeholder" placeholder="United States, Tokyo, Worldwide">
+            </div>
+          </div>
+          <div class="job-search-field">
+            <div class="field">
+              <label data-i18n="job-country-label">Country</label>
+              <select id="job-search-country">
+                <option value="united_states" data-i18n="job-country-us">United States</option>
+                <option value="japan" data-i18n="job-country-japan">Japan</option>
+                <option value="taiwan" data-i18n="job-country-taiwan">Taiwan</option>
+                <option value="any" data-i18n="job-country-any">All target countries</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-generate btn-job-search" id="btn-job-search" onclick="handleJobSearchButton()">
+            <span id="btn-job-search-text" data-i18n="btn-search-jobs">Search Jobs</span>
+            <span id="btn-job-search-spinner" class="spinner hidden"></span>
+          </button>
+        </div>
+        <div id="job-search-error" class="error-msg hidden"></div>
+      </div>
+
+      <div class="job-board-grid">
+        <aside class="job-filter-panel">
+          <div class="job-filter-header">
+            <span data-i18n="job-filters-title">Filters</span>
+            <button class="btn-filter-reset" type="button" onclick="resetJobFilters()" data-i18n="job-clear-filters">Clear</button>
+          </div>
+          <div class="job-filter-group">
+            <div class="field">
+              <label data-i18n="job-type-label">Job Type</label>
+              <select id="job-search-type" onchange="applyJobFilters()">
+                <option value="any" data-i18n="job-type-any">Any type</option>
+                <option value="full_time" data-i18n="job-type-full-time">Full time</option>
+                <option value="contract" data-i18n="job-type-contract">Contract</option>
+                <option value="part_time" data-i18n="job-type-part-time">Part time</option>
+                <option value="freelance" data-i18n="job-type-freelance">Freelance</option>
+                <option value="internship" data-i18n="job-type-internship">Internship</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="job-sort-label">Sort By</label>
+              <select id="job-search-sort" onchange="applyJobFilters()">
+                <option value="relevance" data-i18n="job-sort-relevance">Relevance</option>
+                <option value="newest" data-i18n="job-sort-newest">Newest</option>
+                <option value="company" data-i18n="job-sort-company">Company</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="job-source-filter-label">Source</label>
+              <div id="job-source-filter" class="job-source-filter" role="group" aria-label="Source">
+                <span class="job-source-empty" data-i18n="job-source-any">Any source</span>
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="job-japanese-filter-label">Japanese Language</label>
+              <select id="job-japanese-filter" onchange="applyJobFilters()">
+                <option value="any" data-i18n="job-japanese-any">Any</option>
+                <option value="none" data-i18n="job-japanese-none">No Japanese required</option>
+                <option value="required" data-i18n="job-japanese-required">Japanese required</option>
+                <option value="business" data-i18n="job-japanese-business">Business+</option>
+                <option value="fluent" data-i18n="job-japanese-fluent">Fluent</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="job-safety-filter-label">Public Safety</label>
+              <select id="job-safety-filter" onchange="applyJobFilters()">
+                <option value="any" data-i18n="job-safety-any">Any score</option>
+                <option value="5" data-i18n="job-safety-5">5 stars</option>
+                <option value="4" data-i18n="job-safety-4">4+ stars</option>
+                <option value="3" data-i18n="job-safety-3">3+ stars</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-i18n="job-clearance-filter-label">Security Clearance</label>
+              <select id="job-clearance-filter" onchange="applyJobFilters()">
+                <option value="any" data-i18n="job-clearance-any">Any</option>
+                <option value="required" data-i18n="job-clearance-required">Required only</option>
+                <option value="not_required" data-i18n="job-clearance-not-required">No clearance required</option>
+              </select>
+            </div>
+          </div>
+          <label class="job-checkbox-filter">
+            <input type="checkbox" id="job-salary-only" onchange="applyJobFilters()">
+            <span data-i18n="job-salary-only">Salary listed</span>
+          </label>
+          <label class="job-checkbox-filter">
+            <input type="checkbox" id="job-saved-only" onchange="applyJobFilters()">
+            <span data-i18n="job-saved-only">Saved jobs only</span>
+          </label>
+          <div class="job-filter-note" data-i18n="job-filter-note">Remote jobs often list eligible regions instead of a single city.</div>
+        </aside>
+
+        <section class="job-results-column">
+          <div class="job-results-toolbar">
+            <div>
+              <h3 data-i18n="job-results-title">Results</h3>
+              <div id="job-results-summary" class="job-results-summary"></div>
+            </div>
+            <span class="job-source-note" id="job-source-note"></span>
+          </div>
+          <div id="job-results" class="job-results">
+            <div class="job-empty-state">
+              <h3 data-i18n="job-empty-title">Search by title and location</h3>
+              <p data-i18n="job-empty-copy">Results can be opened directly or sent into the resume builder.</p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="job-detail-panel" id="job-detail-panel">
+          <div class="job-empty-state compact">
+            <h3 data-i18n="job-detail-empty-title">Select a job</h3>
+            <p data-i18n="job-detail-empty-copy">Open a result to review the full posting before sending it into the resume builder.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </section><!-- /job-search-tab -->
 
 </main>
 

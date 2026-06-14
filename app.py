@@ -15,6 +15,11 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from resume_generator import (generate_resume, analyze_fit, parse_resume_text,
                                generate_cover_letter, generate_interview_prep)
+from job_search import (
+    VALID_JOB_TYPES, VALID_JOB_COUNTRIES, JOB_DESCRIPTION_MAX_LENGTH,
+    safe_screenshot_path, search_jobs as run_job_search,
+    job_detail_description as run_job_detail_description,
+)
 from document_builder import (build_docx, build_pdf, build_markdown, build_preview_html,
                                build_cover_letter_docx, build_cover_letter_pdf,
                                build_cover_letter_md)
@@ -44,9 +49,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 VALID_TEMPLATES = frozenset({'modern', 'classic', 'minimal', 'japanese', 'taiwanese'})
 VALID_LANGUAGES  = frozenset({'english', 'japanese', 'taiwanese'})
-
 _SAFE_NAME = re.compile(r'^(cl_)?[a-f0-9]+\.(docx|pdf|md|html)$')
-
 
 def _v(val, allowed, default):
     """Return val if it's in the allowed set, else default."""
@@ -94,7 +97,6 @@ def _safe_path(filename):
         abort(400)
     return os.path.join(OUTPUT_DIR, filename)
 
-
 def _file_id():
     return uuid.uuid4().hex[:10]
 
@@ -132,7 +134,40 @@ def index():
     return render_template('index.html')
 
 
-# ── Import ─────────────────────────────────────────────────────────────────────
+@app.route('/favicon.ico')
+def favicon():
+    return ('', 204)
+
+
+@app.route('/job-screenshot/<filename>')
+def job_screenshot(filename):
+    try:
+        path = safe_screenshot_path(filename)
+    except ValueError:
+        abort(400)
+    if not os.path.isfile(path):
+        abort(404)
+    return send_file(path, mimetype='image/png')
+
+
+# ── Job search ─────────────────────────────────────────────────────────────────
+
+@app.route('/search-jobs')
+@limiter.limit('20 per hour')
+def search_jobs():
+    title = str(request.args.get('title', '')).strip()[:120]
+    country = _v(str(request.args.get('country', 'any')).strip(), VALID_JOB_COUNTRIES, 'any')
+    location = str(request.args.get('location', '')).strip()[:120]
+    job_type = _v(str(request.args.get('job_type', 'any')).strip(), VALID_JOB_TYPES, 'any')
+    return jsonify(run_job_search(title, country, location, job_type))
+
+
+@app.route('/job-detail-description', methods=['POST'])
+@limiter.limit('80 per hour')
+def job_detail_description():
+    payload, status = run_job_detail_description(request.get_json(silent=True) or {})
+    return jsonify(payload), status
+
 
 @app.route('/import-profile', methods=['POST'])
 @limiter.limit('30 per minute')

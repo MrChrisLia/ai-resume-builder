@@ -6,6 +6,7 @@ An AI-powered resume builder that generates tailored, ATS-optimized resumes, cov
 
 - **Resume generation** — Rewrites bullets with strong action verbs, weaves in job keywords, writes a targeted summary
 - **Job fit analysis** — Scores candidate match (1–10) with strengths and gaps, including language requirement checks
+- **Job search** — Search roles for the United States, Japan, and Taiwan; Taiwan searches use a headless-browser 104 POC with browser-session detail extraction, then supplement with other sources
 - **Cover letter** — Professional 3–4 paragraph letter or formal Japanese business letter format
 - **Interview prep** — 10 targeted questions (behavioral, technical, situational, motivation, growth) with talking points
 - **4 resume templates** — Modern, Classic, Minimal, Japanese (職務経歴書)
@@ -54,6 +55,13 @@ GEMINI_API_KEY=your_key_here
 
 Get a free API key at [aistudio.google.com](https://aistudio.google.com/app/apikey).
 
+Optional Google job-search enrichment uses Google Programmable Search:
+
+```
+GOOGLE_CSE_API_KEY=your_google_custom_search_key
+GOOGLE_CSE_ID=your_search_engine_id
+```
+
 ### 4. Run the app
 
 ```bash
@@ -66,7 +74,7 @@ Open [http://localhost:5001](http://localhost:5001) in your browser.
 ## Usage
 
 1. Fill in your profile (or import an existing resume)
-2. Paste a job description
+2. Search for a job or paste a job description
 3. Choose a template
 4. Click **Analyze Fit** to check your match score, then **Generate Resume**
 5. Download as PDF or DOCX, generate a cover letter, or run interview prep
@@ -76,6 +84,7 @@ Open [http://localhost:5001](http://localhost:5001) in your browser.
 ```
 ai-resume-builder/
 ├── app.py                 # Flask routes
+├── job_search/            # Job search providers, filtering, and metadata
 ├── resume_generator.py    # Gemini AI prompts and parsing
 ├── document_builder.py    # PDF, DOCX, Markdown builders
 ├── requirements.txt
