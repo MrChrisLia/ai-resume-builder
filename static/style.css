@@ -1073,7 +1073,8 @@ select {
 .application-tracker-list.page {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, 360px);
+  justify-content: start;
 }
 
 .application-tracker-summary {
@@ -1379,6 +1380,9 @@ select {
   .application-tracker-top {
     flex-direction: column;
     padding: 16px;
+  }
+  .application-tracker-list.page {
+    grid-template-columns: minmax(0, 1fr);
   }
   .job-search-bar,
   .job-board-grid {
