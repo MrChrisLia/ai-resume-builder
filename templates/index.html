@@ -34,6 +34,7 @@
   <div class="workspace-tabs" role="tablist" aria-label="Workspace">
     <button class="workspace-tab selected" id="tab-job-search-btn" role="tab" aria-selected="true" aria-controls="job-search-tab" onclick="switchMainTab('job-search')" data-i18n="tab-job-search">Job Search</button>
     <button class="workspace-tab" id="tab-builder-btn" role="tab" aria-selected="false" aria-controls="resume-builder-tab" onclick="switchMainTab('builder')" data-i18n="tab-builder">Resume Builder</button>
+    <button class="workspace-tab" id="tab-tracker-btn" role="tab" aria-selected="false" aria-controls="application-tracker-tab" onclick="switchMainTab('tracker')" data-i18n="tab-tracker">Application Tracker</button>
   </div>
 
   <section class="tab-panel" id="resume-builder-tab" role="tabpanel" aria-labelledby="tab-builder-btn">
@@ -479,10 +480,22 @@
             <span id="btn-job-search-spinner" class="spinner hidden"></span>
           </button>
         </div>
-        <label class="job-deep-search-toggle">
-          <input type="checkbox" id="job-deep-search">
-          <span data-i18n="job-deep-search-label">Deep search experimental sources</span>
-        </label>
+        <div class="job-search-options">
+          <label class="job-deep-search-toggle">
+            <input type="checkbox" id="job-deep-search">
+            <span data-i18n="job-deep-search-label">Deep search experimental sources</span>
+          </label>
+          <button class="btn-save-search-primary" type="button" onclick="saveCurrentSearch()">
+            <span data-i18n="btn-save-search">Save Current Search</span>
+          </button>
+          <span class="save-search-hint" data-i18n="job-save-search-hint">Reuse these keywords, country, location, and filters later.</span>
+        </div>
+        <div class="saved-searches-panel">
+          <div class="saved-searches-header">
+            <span data-i18n="job-saved-searches-title">Saved Searches</span>
+          </div>
+          <div id="saved-searches-list" class="saved-searches-list"></div>
+        </div>
         <div id="job-search-error" class="error-msg hidden"></div>
       </div>
 
@@ -540,6 +553,15 @@
               </select>
             </div>
             <div class="field">
+              <label data-i18n="job-visa-filter-label">Visa Sponsorship</label>
+              <select id="job-visa-filter" onchange="applyJobFilters()">
+                <option value="any" data-i18n="job-visa-any">Any</option>
+                <option value="available" data-i18n="job-visa-available">Sponsorship available</option>
+                <option value="unavailable" data-i18n="job-visa-unavailable">No sponsorship</option>
+                <option value="authorization_required" data-i18n="job-visa-auth-required">Work authorization required</option>
+              </select>
+            </div>
+            <div class="field">
               <label data-i18n="job-safety-filter-label">Public Safety</label>
               <select id="job-safety-filter" onchange="applyJobFilters()">
                 <option value="any" data-i18n="job-safety-any">Any score</option>
@@ -557,14 +579,6 @@
               </select>
             </div>
           </div>
-          <label class="job-checkbox-filter">
-            <input type="checkbox" id="job-salary-only" onchange="applyJobFilters()">
-            <span data-i18n="job-salary-only">Salary listed</span>
-          </label>
-          <label class="job-checkbox-filter">
-            <input type="checkbox" id="job-saved-only" onchange="applyJobFilters()">
-            <span data-i18n="job-saved-only">Saved jobs only</span>
-          </label>
           <div class="job-filter-note" data-i18n="job-filter-note">Remote jobs often list eligible regions instead of a single city.</div>
         </aside>
 
@@ -593,6 +607,20 @@
       </div>
     </section>
   </section><!-- /job-search-tab -->
+
+  <section class="tab-panel" id="application-tracker-tab" role="tabpanel" aria-labelledby="tab-tracker-btn">
+    <section class="application-tracker-shell">
+      <div class="application-tracker-top">
+        <div>
+          <h2 class="job-board-title" data-i18n="job-application-tracker-title">Application Tracker</h2>
+          <p class="job-board-subtitle" data-i18n="job-application-tracker-subtitle">Track saved roles, application status, notes, and generated resume links.</p>
+        </div>
+        <button class="btn-filter-reset danger" type="button" onclick="clearApplications()" data-i18n="job-application-clear-all">Clear Tracker</button>
+      </div>
+      <div id="application-tracker-summary" class="application-tracker-page-summary"></div>
+      <div id="application-tracker-list" class="application-tracker-list page"></div>
+    </section>
+  </section><!-- /application-tracker-tab -->
 
 </main>
 

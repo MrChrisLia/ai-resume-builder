@@ -1088,6 +1088,53 @@ def _infer_english_requirement(job: dict) -> str:
     return ''
 
 
+def _infer_visa_sponsorship(job: dict) -> str:
+    text = ' '.join(str(job.get(k, '')) for k in (
+        'title', 'company', 'location', 'category', 'job_type', 'description', 'search_location'
+    ))
+    text = re.sub(r'\s+', ' ', text or '').strip()
+    if not text:
+        return ''
+    lower = text.lower()
+
+    no_sponsorship_patterns = (
+        r'\b(?:no|not offering|unable to provide|cannot provide|do not provide|does not provide)\s+(?:visa\s+)?sponsorship\b',
+        r'\b(?:visa\s+)?sponsorship\s+(?:is\s+)?(?:not available|not provided|unavailable)\b',
+        r'\bmust (?:already )?(?:be )?(?:authorized|eligible) to work\b',
+        r'\b(?:valid|existing|current)\s+(?:work\s+)?(?:visa|authorization|permit)\s+(?:required|needed)\b',
+        r'\bno relocation or visa support\b',
+        r'ビザ(?:サポート|スポンサー|支援)[^。,\n]*(?:なし|不可|ありません|行っておりません)',
+        r'(?:ビザ|就労資格)[^。,\n]*(?:必須|必要)',
+        r'不提供(?:工作)?簽證(?:贊助|協助|支援)?',
+        r'(?:需|需要|須|必須)[^。,\n]*(?:工作許可|工作簽證|居留證)',
+    )
+    if any(re.search(pattern, text, re.I) for pattern in no_sponsorship_patterns):
+        return 'No visa sponsorship'
+
+    sponsorship_patterns = (
+        r'\b(?:visa\s+)?sponsorship\s+(?:available|provided|offered)\b',
+        r'\b(?:will|can|able to)\s+(?:provide|offer|support|sponsor)\s+(?:a\s+)?(?:work\s+)?visa\b',
+        r'\b(?:work\s+)?visa\s+(?:support|sponsorship|assistance)\b',
+        r'\brelocation and visa support\b',
+        r'\bsponsor(?:s|ship)?\s+(?:work\s+)?visa\b',
+        r'ビザ(?:サポート|スポンサー|支援)[^。,\n]*(?:あり|可能|提供|支給|対応)',
+        r'(?:就労ビザ|就労資格)[^。,\n]*(?:取得支援|サポート|支援)',
+        r'提供(?:工作)?簽證(?:贊助|協助|支援)?',
+        r'(?:工作)?簽證(?:贊助|協助|支援)',
+    )
+    if any(re.search(pattern, text, re.I) for pattern in sponsorship_patterns):
+        return 'Visa sponsorship available'
+
+    authorization_patterns = (
+        r'\b(?:work authorization|work permit|valid visa)\s+(?:required|needed)\b',
+        r'\bmust have (?:valid |current |existing )?(?:work authorization|work permit|visa)\b',
+    )
+    if any(re.search(pattern, lower, re.I) for pattern in authorization_patterns):
+        return 'Work authorization required'
+
+    return ''
+
+
 def _infer_security_clearance(job: dict) -> str:
     text = ' '.join(str(job.get(k, '')) for k in (
         'title', 'company', 'location', 'category', 'job_type', 'description', 'search_terms', 'search_location'
@@ -1224,6 +1271,8 @@ def _annotate_job_metadata(job: dict) -> dict:
         normalized['japanese_requirement'] = _infer_japanese_requirement(normalized)
     if not normalized.get('english_requirement'):
         normalized['english_requirement'] = _infer_english_requirement(normalized)
+    if not normalized.get('visa_sponsorship'):
+        normalized['visa_sponsorship'] = _infer_visa_sponsorship(normalized)
     if not normalized.get('security_clearance'):
         normalized['security_clearance'] = _infer_security_clearance(normalized)
     if not normalized.get('public_safety_score'):
@@ -1235,7 +1284,7 @@ def _annotate_job_metadata(job: dict) -> dict:
 def _job_text(job: dict) -> str:
     return ' '.join(str(job.get(k, '')) for k in (
         'title', 'company', 'location', 'category', 'job_type', 'description',
-        'japanese_requirement', 'english_requirement', 'security_clearance', 'search_terms'
+        'japanese_requirement', 'english_requirement', 'visa_sponsorship', 'security_clearance', 'search_terms'
     )).lower()
 
 

@@ -125,6 +125,7 @@ def job_detail_description(data: dict) -> tuple[dict, int]:
         'description_source': enriched.get('description_source'),
         'japanese_requirement': enriched.get('japanese_requirement', ''),
         'english_requirement': enriched.get('english_requirement', ''),
+        'visa_sponsorship': enriched.get('visa_sponsorship', ''),
         'security_clearance': enriched.get('security_clearance', ''),
         'public_safety_score': enriched.get('public_safety_score'),
         'public_safety_label': enriched.get('public_safety_label', ''),

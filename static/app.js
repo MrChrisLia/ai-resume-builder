@@ -4,14 +4,15 @@
 const PROFILES_KEY = 'resumeProfiles';
 const ACTIVE_KEY   = 'activeProfileId';
 const HISTORY_KEY  = 'resumeHistory';
-const SAVED_JOBS_KEY = 'savedJobIds';
+const APPLICATIONS_KEY = 'jobApplications';
+const SAVED_SEARCHES_KEY = 'savedJobSearches';
 
 // ── UI Translations ───────────────────────────────────────────────────────────
 const TRANSLATIONS = {
   en: {
     'powered-by': 'Powered by Gemini',
     'step1-title': ' Your Profile', 'step2-title': ' Job & Generate',
-    'tab-builder': 'Resume Builder', 'tab-job-search': 'Job Search',
+    'tab-builder': 'Resume Builder', 'tab-job-search': 'Job Search', 'tab-tracker': 'Application Tracker',
     'profile-label': 'Profile', 'save-indicator': '✓ Saved',
     'import-label': 'Import:', 'btn-import': 'Resume File',
     'btn-profile-json': 'Profile JSON',
@@ -104,8 +105,6 @@ const TRANSLATIONS = {
     'job-sort-company': 'Company',
     'job-source-filter-label': 'Source',
     'job-source-any': 'Any source',
-    'job-salary-only': 'Salary listed',
-    'job-saved-only': 'Saved jobs only',
     'job-japanese-filter-label': 'Japanese Language',
     'job-japanese-any': 'Any',
     'job-japanese-none': 'No Japanese required',
@@ -119,6 +118,11 @@ const TRANSLATIONS = {
     'job-english-business': 'Business+',
     'job-english-fluent': 'Fluent',
     'job-english-only': 'English-only',
+    'job-visa-filter-label': 'Visa Sponsorship',
+    'job-visa-any': 'Any',
+    'job-visa-available': 'Sponsorship available',
+    'job-visa-unavailable': 'No sponsorship',
+    'job-visa-auth-required': 'Work authorization required',
     'job-safety-filter-label': 'Public Safety',
     'job-safety-any': 'Any score',
     'job-safety-5': '5 stars',
@@ -131,8 +135,36 @@ const TRANSLATIONS = {
     'job-filter-note': 'Country matching includes regional eligibility such as Americas, Asia, APAC, and Worldwide.',
     'job-detail-empty-title': 'Select a job',
     'job-detail-empty-copy': 'Open a result to review the full posting before sending it into the resume builder.',
-    'job-save': 'Save',
-    'job-saved': 'Saved',
+    'job-queued': 'Search queued...',
+    'btn-save-search': 'Save Current Search',
+    'job-save-search-hint': 'Reuse these keywords, country, location, and filters later.',
+    'job-saved-searches-title': 'Saved Searches',
+    'job-saved-search-empty': 'No saved searches yet.',
+    'job-run-search': 'Run',
+    'job-delete-search': 'Delete',
+    'job-saved-search-saved': 'Search saved.',
+    'job-new-results': '{count} new since last run',
+    'job-last-run': 'Last run',
+    'job-application-tracker-title': 'Application Tracker',
+    'job-application-tracker-subtitle': 'Track saved roles, application status, notes, and generated resume links.',
+    'job-application-tracker-empty': 'No tracked applications yet.',
+    'job-application-clear-all': 'Clear Tracker',
+    'job-application-clear-confirm': 'Clear all tracked applications?',
+    'job-application-count': '{count} tracked applications',
+    'job-application-delete': 'Delete',
+    'job-application-status-label': 'Status',
+    'job-application-notes-label': 'Notes',
+    'job-application-notes-placeholder': 'Recruiter name, next step, follow-up date...',
+    'job-application-updated': 'Updated',
+    'job-application-open': 'Open',
+    'job-resume-linked': 'Resume linked',
+    'job-status-untracked': 'Not tracked',
+    'job-status-interested': 'Interested',
+    'job-status-applied': 'Applied',
+    'job-status-interviewing': 'Interviewing',
+    'job-status-offer': 'Offer',
+    'job-status-rejected': 'Rejected',
+    'job-status-archived': 'Archived',
     'job-description-title': 'Job Description',
     'job-match-hint': 'Send this posting to Job & Generate to check fit and tailor your resume.',
     'analyzing': 'Analyzing…', 'generating': 'Generating…', 'importing': 'Importing…',
@@ -165,7 +197,7 @@ const TRANSLATIONS = {
   ja: {
     'powered-by': 'Gemini搭載',
     'step1-title': ' プロフィール', 'step2-title': ' 求人・生成',
-    'tab-builder': '履歴書作成', 'tab-job-search': '求人検索',
+    'tab-builder': '履歴書作成', 'tab-job-search': '求人検索', 'tab-tracker': '応募管理',
     'profile-label': 'プロフィール', 'save-indicator': '✓ 保存済み',
     'import-label': 'インポート:', 'btn-import': '履歴書ファイル',
     'btn-profile-json': 'プロフィールJSON',
@@ -257,8 +289,6 @@ const TRANSLATIONS = {
     'job-sort-company': '会社名',
     'job-source-filter-label': '提供元',
     'job-source-any': 'すべての提供元',
-    'job-salary-only': '給与表示あり',
-    'job-saved-only': '保存済みのみ',
     'job-japanese-filter-label': '日本語条件',
     'job-japanese-any': 'すべて',
     'job-japanese-none': '日本語不要',
@@ -272,6 +302,11 @@ const TRANSLATIONS = {
     'job-english-business': 'ビジネス以上',
     'job-english-fluent': '流暢',
     'job-english-only': '英語のみ',
+    'job-visa-filter-label': 'ビザスポンサー',
+    'job-visa-any': 'すべて',
+    'job-visa-available': 'スポンサーあり',
+    'job-visa-unavailable': 'スポンサーなし',
+    'job-visa-auth-required': '就労資格必須',
     'job-safety-filter-label': '治安スコア',
     'job-safety-any': 'すべて',
     'job-safety-5': '5つ星',
@@ -284,8 +319,36 @@ const TRANSLATIONS = {
     'job-filter-note': '国フィルターは Americas、Asia、APAC、Worldwide などの地域条件にも対応します。',
     'job-detail-empty-title': '求人を選択',
     'job-detail-empty-copy': '求人詳細を確認してから履歴書作成に送れます。',
-    'job-save': '保存',
-    'job-saved': '保存済み',
+    'job-queued': '検索をキューに追加しました...',
+    'btn-save-search': '現在の検索を保存',
+    'job-save-search-hint': 'キーワード、国、勤務地、フィルターを後で再利用できます。',
+    'job-saved-searches-title': '保存した検索',
+    'job-saved-search-empty': '保存した検索はまだありません。',
+    'job-run-search': '実行',
+    'job-delete-search': '削除',
+    'job-saved-search-saved': '検索を保存しました。',
+    'job-new-results': '前回から{count}件の新着',
+    'job-last-run': '前回実行',
+    'job-application-tracker-title': '応募管理',
+    'job-application-tracker-subtitle': '保存した求人、応募ステータス、メモ、生成済み履歴書リンクを管理します。',
+    'job-application-tracker-empty': '管理中の応募はまだありません。',
+    'job-application-clear-all': '管理リストをクリア',
+    'job-application-clear-confirm': '管理中の応募をすべて削除しますか？',
+    'job-application-count': '{count}件の応募管理',
+    'job-application-delete': '削除',
+    'job-application-status-label': 'ステータス',
+    'job-application-notes-label': 'メモ',
+    'job-application-notes-placeholder': '担当者、次のステップ、フォロー日など...',
+    'job-application-updated': '更新',
+    'job-application-open': '開く',
+    'job-resume-linked': '履歴書リンク済み',
+    'job-status-untracked': '未管理',
+    'job-status-interested': '興味あり',
+    'job-status-applied': '応募済み',
+    'job-status-interviewing': '面接中',
+    'job-status-offer': '内定',
+    'job-status-rejected': '不採用',
+    'job-status-archived': 'アーカイブ',
     'job-description-title': '求人内容',
     'job-match-hint': 'この求人票を「求人・生成」に送って適性チェックと履歴書作成に使います。',
     'analyzing': '分析中…', 'generating': '生成中…', 'importing': 'インポート中…',
@@ -318,7 +381,7 @@ const TRANSLATIONS = {
   tw: {
     'powered-by': '由 Gemini 驅動',
     'step1-title': ' 個人資料', 'step2-title': ' 職缺與生成',
-    'tab-builder': '履歷產生器', 'tab-job-search': '職缺搜尋',
+    'tab-builder': '履歷產生器', 'tab-job-search': '職缺搜尋', 'tab-tracker': '應徵追蹤',
     'profile-label': '資料', 'save-indicator': '✓ 已儲存',
     'import-label': '匯入：', 'btn-import': '履歷檔案',
     'btn-profile-json': '資料JSON',
@@ -410,8 +473,6 @@ const TRANSLATIONS = {
     'job-sort-company': '公司',
     'job-source-filter-label': '來源',
     'job-source-any': '不限來源',
-    'job-salary-only': '有列薪資',
-    'job-saved-only': '只看已儲存',
     'job-japanese-filter-label': '日文條件',
     'job-japanese-any': '不限',
     'job-japanese-none': '不需日文',
@@ -425,6 +486,11 @@ const TRANSLATIONS = {
     'job-english-business': '商務以上',
     'job-english-fluent': '流利',
     'job-english-only': '僅英文',
+    'job-visa-filter-label': '簽證贊助',
+    'job-visa-any': '不限',
+    'job-visa-available': '提供簽證贊助',
+    'job-visa-unavailable': '不提供贊助',
+    'job-visa-auth-required': '需工作許可',
     'job-safety-filter-label': '公共安全',
     'job-safety-any': '不限分數',
     'job-safety-5': '5 星',
@@ -437,8 +503,36 @@ const TRANSLATIONS = {
     'job-filter-note': '國家篩選會納入 Americas、Asia、APAC、Worldwide 等地區資格。',
     'job-detail-empty-title': '選擇職缺',
     'job-detail-empty-copy': '先查看完整職缺，再送入履歷產生器。',
-    'job-save': '儲存',
-    'job-saved': '已儲存',
+    'job-queued': '搜尋已排入佇列...',
+    'btn-save-search': '儲存目前搜尋',
+    'job-save-search-hint': '稍後可重複使用這些關鍵字、國家、地點與篩選條件。',
+    'job-saved-searches-title': '已儲存搜尋',
+    'job-saved-search-empty': '尚無已儲存搜尋。',
+    'job-run-search': '執行',
+    'job-delete-search': '刪除',
+    'job-saved-search-saved': '搜尋已儲存。',
+    'job-new-results': '比上次新增 {count} 筆',
+    'job-last-run': '上次執行',
+    'job-application-tracker-title': '應徵追蹤',
+    'job-application-tracker-subtitle': '追蹤已儲存職缺、應徵狀態、備註與已產生履歷連結。',
+    'job-application-tracker-empty': '尚無追蹤中的應徵。',
+    'job-application-clear-all': '清除追蹤',
+    'job-application-clear-confirm': '清除所有應徵追蹤？',
+    'job-application-count': '追蹤 {count} 筆應徵',
+    'job-application-delete': '刪除',
+    'job-application-status-label': '狀態',
+    'job-application-notes-label': '備註',
+    'job-application-notes-placeholder': '招募人員、下一步、追蹤日期...',
+    'job-application-updated': '更新',
+    'job-application-open': '開啟',
+    'job-resume-linked': '已連結履歷',
+    'job-status-untracked': '未追蹤',
+    'job-status-interested': '有興趣',
+    'job-status-applied': '已投遞',
+    'job-status-interviewing': '面試中',
+    'job-status-offer': '錄取',
+    'job-status-rejected': '未錄取',
+    'job-status-archived': '封存',
     'job-description-title': '職缺內容',
     'job-match-hint': '將此職缺送至職缺與生成，用於適配分析與履歷客製化。',
     'analyzing': '分析中…', 'generating': '生成中…', 'importing': '匯入中…',
@@ -482,7 +576,12 @@ let _selectedJobId = '';
 let _jobSearchPrefilled = false;
 let _jobSearchController = null;
 let _jobSearchRequestId = 0;
+let _jobSearchJobId = '';
+let _jobSearchPollTimer = null;
 let _jobDetailHydrationId = 0;
+let _activeSavedSearchId = '';
+let _pendingSavedSearchFilters = null;
+let _activeTrackedJobKey = '';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -543,6 +642,8 @@ function setUILang(lang, el) {
   if (el) el.classList.add('selected');
   _applyTranslations(document);
   populateSourceFilter();
+  renderSavedSearches();
+  renderApplicationTrackerPanel();
 }
 
 // ── Profile storage helpers ───────────────────────────────────────────────────
@@ -1005,18 +1106,31 @@ async function handleImport(input) {
 // ── Workspace tabs & job search ───────────────────────────────────────────────
 
 function switchMainTab(tab) {
-  const isJobSearch = tab === 'job-search';
-  document.getElementById('resume-builder-tab').classList.toggle('active', !isJobSearch);
-  document.getElementById('job-search-tab').classList.toggle('active', isJobSearch);
+  const tabs = {
+    'job-search': {
+      panel: document.getElementById('job-search-tab'),
+      button: document.getElementById('tab-job-search-btn'),
+    },
+    tracker: {
+      panel: document.getElementById('application-tracker-tab'),
+      button: document.getElementById('tab-tracker-btn'),
+    },
+    builder: {
+      panel: document.getElementById('resume-builder-tab'),
+      button: document.getElementById('tab-builder-btn'),
+    },
+  };
+  const activeTab = tabs[tab] ? tab : 'job-search';
+  Object.entries(tabs).forEach(([key, item]) => {
+    const active = key === activeTab;
+    item.panel.classList.toggle('active', active);
+    item.button.classList.toggle('selected', active);
+    item.button.setAttribute('aria-selected', String(active));
+  });
 
-  const builderBtn = document.getElementById('tab-builder-btn');
-  const jobBtn = document.getElementById('tab-job-search-btn');
-  builderBtn.classList.toggle('selected', !isJobSearch);
-  jobBtn.classList.toggle('selected', isJobSearch);
-  builderBtn.setAttribute('aria-selected', String(!isJobSearch));
-  jobBtn.setAttribute('aria-selected', String(isJobSearch));
+  if (activeTab === 'tracker') renderApplicationTrackerPanel();
 
-  if (isJobSearch && !_jobSearchPrefilled) {
+  if (activeTab === 'job-search' && !_jobSearchPrefilled) {
     const profileLocation = document.getElementById('location')?.value.trim();
     const countrySelect = document.getElementById('job-search-country');
     const searchLocation = document.getElementById('job-search-location-input');
@@ -1056,27 +1170,94 @@ function handleJobSearchButton() {
   searchJobs();
 }
 
-function cancelJobSearch() {
+async function cancelJobSearch() {
   if (!_jobSearchController) return;
   _jobSearchController.abort();
+  if (_jobSearchPollTimer) {
+    clearTimeout(_jobSearchPollTimer);
+    _jobSearchPollTimer = null;
+  }
+  const jobId = _jobSearchJobId;
+  _jobSearchJobId = '';
   _jobSearchController = null;
   _jobSearchRequestId += 1;
+  if (jobId) {
+    fetch(`/search-jobs/${encodeURIComponent(jobId)}/cancel`, { method: 'POST' }).catch(() => {});
+  }
   setJobSearchLoading(false);
   showError(t('job-search-cancelled'), 'job-search-error');
 }
 
-async function searchJobs() {
+function finishJobSearch(data, requestId) {
+  if (requestId !== _jobSearchRequestId) return;
+  _allJobSearchResults = data.jobs || [];
+  _jobSearchMeta = data;
+  _selectedJobId = _allJobSearchResults[0]?.id || '';
+  populateSourceFilter();
+  if (_pendingSavedSearchFilters) {
+    restoreSavedSearchFilters(_pendingSavedSearchFilters);
+    _pendingSavedSearchFilters = null;
+  }
+  const newSinceLast = updateSavedSearchAfterRun(_allJobSearchResults);
+  if (_activeSavedSearchId) _jobSearchMeta.new_since_last = newSinceLast;
+  applyJobFilters();
+}
+
+async function pollJobSearch(jobId, requestId, controller) {
+  if (requestId !== _jobSearchRequestId || controller.signal.aborted) return;
+  try {
+    const res = await fetch(`/search-jobs/${encodeURIComponent(jobId)}`, { signal: controller.signal });
+    if (requestId !== _jobSearchRequestId) return;
+    let data;
+    try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
+    if (requestId !== _jobSearchRequestId) return;
+    if (!res.ok || data.success === false) throw new Error(data.error || 'Search failed.');
+
+    const sourceEl = document.getElementById('job-source-note');
+    if (sourceEl && data.progress && data.status !== 'completed') sourceEl.textContent = data.progress;
+
+    if (data.status === 'completed') {
+      finishJobSearch(data, requestId);
+      _jobSearchController = null;
+      _jobSearchJobId = '';
+      _jobSearchPollTimer = null;
+      setJobSearchLoading(false);
+      return;
+    }
+    if (data.status === 'cancelled') {
+      _jobSearchController = null;
+      _jobSearchJobId = '';
+      _jobSearchPollTimer = null;
+      setJobSearchLoading(false);
+      showError(t('job-search-cancelled'), 'job-search-error');
+      return;
+    }
+    _jobSearchPollTimer = setTimeout(() => pollJobSearch(jobId, requestId, controller), 1250);
+  } catch (err) {
+    if (err.name === 'AbortError' || requestId !== _jobSearchRequestId) return;
+    _jobSearchController = null;
+    _jobSearchJobId = '';
+    _jobSearchPollTimer = null;
+    setJobSearchLoading(false);
+    showError(t('job-search-error-prefix') + err.message, 'job-search-error');
+  }
+}
+
+async function searchJobs({ savedSearchId = '' } = {}) {
   if (_jobSearchController) {
     cancelJobSearch();
     return;
   }
 
-  const title = document.getElementById('job-search-title-input').value.trim();
-  const country = document.getElementById('job-search-country').value;
-  const location = document.getElementById('job-search-location-input').value.trim();
-  const jobType = document.getElementById('job-search-type').value;
-  const deepSearch = document.getElementById('job-deep-search')?.checked ? 'true' : 'false';
-  const params = new URLSearchParams({ title, country, location, job_type: jobType, deep_search: deepSearch });
+  _activeSavedSearchId = savedSearchId;
+  const searchState = collectSavedSearchState();
+  const params = new URLSearchParams({
+    title: searchState.title,
+    country: searchState.country,
+    location: searchState.location,
+    job_type: searchState.job_type,
+    deep_search: searchState.deep_search ? 'true' : 'false',
+  });
   const controller = new AbortController();
   const requestId = ++_jobSearchRequestId;
   _jobSearchController = controller;
@@ -1091,43 +1272,521 @@ async function searchJobs() {
     try { data = await res.json(); } catch { throw new Error(`Server error (HTTP ${res.status})`); }
     if (requestId !== _jobSearchRequestId) return;
     if (!res.ok || !data.success) throw new Error(data.error || 'Search failed.');
-    _allJobSearchResults = data.jobs || [];
-    _jobSearchMeta = data;
-    _selectedJobId = _allJobSearchResults[0]?.id || '';
-    populateSourceFilter();
-    applyJobFilters();
+    if (data.queued && data.job_id) {
+      _jobSearchJobId = data.job_id;
+      const sourceEl = document.getElementById('job-source-note');
+      if (sourceEl) sourceEl.textContent = data.progress || t('job-queued');
+      pollJobSearch(data.job_id, requestId, controller);
+      return;
+    }
+    finishJobSearch(data, requestId);
   } catch (err) {
     if (err.name === 'AbortError' || requestId !== _jobSearchRequestId) return;
     showError(t('job-search-error-prefix') + err.message, 'job-search-error');
   } finally {
-    if (requestId === _jobSearchRequestId) {
+    if (requestId === _jobSearchRequestId && !_jobSearchJobId) {
       _jobSearchController = null;
       setJobSearchLoading(false);
     }
   }
 }
 
-function getSavedJobIds() {
-  try { return JSON.parse(localStorage.getItem(SAVED_JOBS_KEY)) || []; }
-  catch { return []; }
+function readStorageArray(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-function setSavedJobIds(ids) {
-  localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(Array.from(new Set(ids))));
+function writeStorageArray(key, list) {
+  localStorage.setItem(key, JSON.stringify(Array.isArray(list) ? list : []));
 }
 
-function isJobSaved(jobId) {
-  return getSavedJobIds().includes(jobId);
+function stableJobKey(job) {
+  if (!job) return '';
+  if (job.url) return `url:${job.url}`;
+  return [
+    job.source || '',
+    job.company || '',
+    job.title || '',
+    job.location || '',
+  ].join('|').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function toggleSavedJob(jobId, event) {
+function jobResultKey(job) {
+  return stableJobKey(job) || `id:${job?.id || ''}`;
+}
+
+function getApplications() {
+  return readStorageArray(APPLICATIONS_KEY);
+}
+
+function saveApplications(applications) {
+  writeStorageArray(APPLICATIONS_KEY, applications);
+}
+
+function applicationStatusLabel(status) {
+  return t(`job-status-${status || 'untracked'}`);
+}
+
+function getApplicationForJob(job) {
+  const key = stableJobKey(job);
+  if (!key) return null;
+  return getApplications().find(app => app.job_key === key) || null;
+}
+
+function upsertApplicationForJob(job, updates = {}) {
+  const key = stableJobKey(job);
+  if (!key) return null;
+  const now = Date.now();
+  const applications = getApplications();
+  let app = applications.find(item => item.job_key === key);
+  if (!app) {
+    app = {
+      id: genId(),
+      job_key: key,
+      title: job.title || 'Untitled role',
+      company: job.company || '',
+      location: job.location || '',
+      source: job.source || '',
+      url: job.url || '',
+      status: 'interested',
+      notes: '',
+      created_at: now,
+    };
+    applications.unshift(app);
+  }
+  Object.assign(app, updates, {
+    title: job.title || app.title,
+    company: job.company || app.company,
+    location: job.location || app.location,
+    source: job.source || app.source,
+    url: job.url || app.url,
+    updated_at: now,
+  });
+  saveApplications(applications);
+  renderApplicationTrackerPanel();
+  return app;
+}
+
+function removeApplicationForJob(job) {
+  const key = stableJobKey(job);
+  if (!key) return;
+  saveApplications(getApplications().filter(app => app.job_key !== key));
+  renderApplicationTrackerPanel();
+}
+
+function updateApplicationById(appId, updates = {}) {
+  const applications = getApplications();
+  const app = applications.find(item => item.id === appId);
+  if (!app) return;
+  Object.assign(app, updates, { updated_at: Date.now() });
+  saveApplications(applications);
+  renderApplicationTrackerPanel();
+  renderJobResults(_jobSearchResults, _jobSearchMeta);
+  if (_selectedJobId) renderJobDetail(_selectedJobId);
+}
+
+function deleteApplication(appId) {
+  saveApplications(getApplications().filter(app => app.id !== appId));
+  renderApplicationTrackerPanel();
+  renderJobResults(_jobSearchResults, _jobSearchMeta);
+  if (_selectedJobId) renderJobDetail(_selectedJobId);
+}
+
+function clearApplications() {
+  if (!confirm(t('job-application-clear-confirm'))) return;
+  saveApplications([]);
+  renderApplicationTrackerPanel();
+  renderJobResults(_jobSearchResults, _jobSearchMeta);
+  if (_selectedJobId) renderJobDetail(_selectedJobId);
+}
+
+function appendApplicationStatusBadge(container, job) {
+  const app = getApplicationForJob(job);
+  if (!app?.status) return;
+  appendJobMetaBadge(container, applicationStatusLabel(app.status), `application-status status-${app.status}`);
+}
+
+function renderApplicationTrackerPanel() {
+  const container = document.getElementById('application-tracker-list');
+  const summaryEl = document.getElementById('application-tracker-summary');
+  if (!container) return;
+  const applications = getApplications()
+    .slice()
+    .sort((a, b) => (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0));
+  container.innerHTML = '';
+  if (summaryEl) summaryEl.innerHTML = '';
+
+  if (!applications.length) {
+    const empty = document.createElement('div');
+    empty.className = 'application-tracker-empty';
+    empty.textContent = t('job-application-tracker-empty');
+    container.appendChild(empty);
+    return;
+  }
+
+  const summary = document.createElement('div');
+  summary.className = 'application-tracker-summary';
+  const total = document.createElement('span');
+  total.textContent = t('job-application-count').replace('{count}', applications.length);
+  summary.appendChild(total);
+  ['interested', 'applied', 'interviewing', 'offer'].forEach(status => {
+    const count = applications.filter(app => app.status === status).length;
+    if (!count) return;
+    const chip = document.createElement('span');
+    chip.textContent = `${applicationStatusLabel(status)} ${count}`;
+    summary.appendChild(chip);
+  });
+  if (summaryEl) {
+    summaryEl.appendChild(summary);
+  } else if (summary.childNodes.length) {
+    container.appendChild(summary);
+  }
+
+  applications.forEach(app => {
+    const item = document.createElement('div');
+    item.className = 'application-tracker-item';
+
+    const header = document.createElement('div');
+    header.className = 'application-tracker-item-header';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'application-tracker-title-group';
+    const title = document.createElement('button');
+    title.type = 'button';
+    title.className = 'application-tracker-title';
+    title.textContent = app.title || 'Untitled role';
+    title.onclick = () => {
+      const matchingJob = _allJobSearchResults.find(job => stableJobKey(job) === app.job_key);
+      if (matchingJob) {
+        switchMainTab('job-search');
+        selectJob(matchingJob.id);
+      } else if (app.url) {
+        window.open(app.url, '_blank', 'noopener,noreferrer');
+      }
+    };
+
+    const meta = document.createElement('div');
+    meta.className = 'application-tracker-meta';
+    meta.textContent = [app.company, app.location, app.source].filter(Boolean).join(' · ');
+
+    titleGroup.appendChild(title);
+    titleGroup.appendChild(meta);
+
+    const statusSelect = document.createElement('select');
+    statusSelect.className = 'application-status-select';
+    ['interested', 'applied', 'interviewing', 'offer', 'rejected', 'archived'].forEach(status => {
+      const option = document.createElement('option');
+      option.value = status;
+      option.textContent = applicationStatusLabel(status);
+      option.selected = (app.status || 'interested') === status;
+      statusSelect.appendChild(option);
+    });
+    statusSelect.onchange = () => updateApplicationById(app.id, { status: statusSelect.value });
+
+    header.appendChild(titleGroup);
+    header.appendChild(statusSelect);
+
+    const notes = document.createElement('textarea');
+    notes.className = 'application-notes-input';
+    notes.rows = 3;
+    notes.placeholder = t('job-application-notes-placeholder');
+    notes.value = app.notes || '';
+    notes.onchange = () => updateApplicationById(app.id, { notes: notes.value });
+
+    const footer = document.createElement('div');
+    footer.className = 'application-tracker-actions';
+    const updated = document.createElement('span');
+    const updatedParts = [];
+    if (app.updated_at) updatedParts.push(`${t('job-application-updated')}: ${new Date(app.updated_at).toLocaleDateString()}`);
+    if (app.resume_history_id) updatedParts.push(t('job-resume-linked'));
+    updated.textContent = updatedParts.join(' · ');
+    footer.appendChild(updated);
+
+    if (app.url) {
+      const open = document.createElement('a');
+      open.href = app.url;
+      open.target = '_blank';
+      open.rel = 'noopener noreferrer';
+      open.textContent = t('job-application-open');
+      footer.appendChild(open);
+    }
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.textContent = t('job-application-delete');
+    deleteBtn.onclick = () => deleteApplication(app.id);
+    footer.appendChild(deleteBtn);
+
+    item.appendChild(header);
+    item.appendChild(notes);
+    item.appendChild(footer);
+    container.appendChild(item);
+  });
+}
+
+function renderApplicationTrackerEditor(job) {
+  const section = document.createElement('section');
+  section.className = 'application-tracker-editor';
+  const app = getApplicationForJob(job);
+
+  const title = document.createElement('h4');
+  title.textContent = t('job-application-tracker-title');
+  section.appendChild(title);
+
+  const statusField = document.createElement('label');
+  statusField.className = 'tracker-field';
+  const statusLabel = document.createElement('span');
+  statusLabel.textContent = t('job-application-status-label');
+  const statusSelect = document.createElement('select');
+  [
+    ['', 'job-status-untracked'],
+    ['interested', 'job-status-interested'],
+    ['applied', 'job-status-applied'],
+    ['interviewing', 'job-status-interviewing'],
+    ['offer', 'job-status-offer'],
+    ['rejected', 'job-status-rejected'],
+    ['archived', 'job-status-archived'],
+  ].forEach(([value, labelKey]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = t(labelKey);
+    option.selected = (app?.status || '') === value;
+    statusSelect.appendChild(option);
+  });
+  statusSelect.onchange = () => {
+    if (!statusSelect.value) {
+      removeApplicationForJob(job);
+    } else {
+      upsertApplicationForJob(job, { status: statusSelect.value });
+    }
+    renderJobResults(_jobSearchResults, _jobSearchMeta);
+    renderJobDetail(job.id);
+  };
+  statusField.appendChild(statusLabel);
+  statusField.appendChild(statusSelect);
+  section.appendChild(statusField);
+
+  const notesField = document.createElement('label');
+  notesField.className = 'tracker-field';
+  const notesLabel = document.createElement('span');
+  notesLabel.textContent = t('job-application-notes-label');
+  const notes = document.createElement('textarea');
+  notes.rows = 3;
+  notes.placeholder = t('job-application-notes-placeholder');
+  notes.value = app?.notes || '';
+  notes.onchange = () => upsertApplicationForJob(job, { notes: notes.value, status: statusSelect.value || 'interested' });
+  notesField.appendChild(notesLabel);
+  notesField.appendChild(notes);
+  section.appendChild(notesField);
+
+  if (app?.updated_at || app?.resume_history_id) {
+    const updated = document.createElement('div');
+    updated.className = 'application-tracker-updated';
+    const parts = [];
+    if (app.updated_at) parts.push(`${t('job-application-updated')}: ${new Date(app.updated_at).toLocaleDateString()}`);
+    if (app.resume_history_id) parts.push(t('job-resume-linked'));
+    updated.textContent = parts.join(' · ');
+    section.appendChild(updated);
+  }
+
+  return section;
+}
+
+function collectSavedSearchState() {
+  return {
+    title: document.getElementById('job-search-title-input').value.trim(),
+    location: document.getElementById('job-search-location-input').value.trim(),
+    country: document.getElementById('job-search-country').value,
+    job_type: document.getElementById('job-search-type').value,
+    deep_search: Boolean(document.getElementById('job-deep-search')?.checked),
+    filters: {
+      sort: document.getElementById('job-search-sort').value,
+      sources: getSelectedJobSources(),
+      japanese: document.getElementById('job-japanese-filter').value,
+      english: document.getElementById('job-english-filter').value,
+      visa: document.getElementById('job-visa-filter').value,
+      safety: document.getElementById('job-safety-filter').value,
+      clearance: document.getElementById('job-clearance-filter').value,
+    },
+  };
+}
+
+function savedSearchSignature(search) {
+  return JSON.stringify({
+    title: search.title || '',
+    location: search.location || '',
+    country: search.country || 'any',
+    job_type: search.job_type || 'any',
+    deep_search: Boolean(search.deep_search),
+    filters: search.filters || {},
+  });
+}
+
+function getSavedSearches() {
+  return readStorageArray(SAVED_SEARCHES_KEY);
+}
+
+function saveSavedSearches(searches) {
+  writeStorageArray(SAVED_SEARCHES_KEY, searches);
+}
+
+function savedSearchName(search) {
+  const countrySelect = document.getElementById('job-search-country');
+  const countryText = countrySelect?.querySelector(`option[value="${search.country}"]`)?.textContent || search.country || 'Any country';
+  return [
+    search.title || 'Any role',
+    search.location || countryText,
+  ].filter(Boolean).join(' · ');
+}
+
+function saveCurrentSearch() {
+  const state = collectSavedSearchState();
+  const signature = savedSearchSignature(state);
+  const searches = getSavedSearches();
+  let search = searches.find(item => item.signature === signature);
+  const now = Date.now();
+  const resultKeys = _allJobSearchResults.map(jobResultKey).filter(Boolean);
+  if (search) {
+    Object.assign(search, state, {
+      name: savedSearchName(state),
+      updated_at: now,
+      last_count: resultKeys.length || search.last_count || 0,
+      last_result_keys: resultKeys.length ? resultKeys : (search.last_result_keys || []),
+    });
+  } else {
+    search = {
+      id: genId(),
+      ...state,
+      name: savedSearchName(state),
+      signature,
+      created_at: now,
+      updated_at: now,
+      last_count: resultKeys.length,
+      last_result_keys: resultKeys,
+    };
+    searches.unshift(search);
+  }
+  saveSavedSearches(searches.slice(0, 20));
+  _activeSavedSearchId = search.id;
+  renderSavedSearches();
+  const sourceEl = document.getElementById('job-source-note');
+  if (sourceEl) sourceEl.textContent = t('job-saved-search-saved');
+}
+
+function restoreSavedSearchFields(search) {
+  document.getElementById('job-search-title-input').value = search.title || '';
+  document.getElementById('job-search-location-input').value = search.location || '';
+  document.getElementById('job-search-country').value = search.country || 'any';
+  document.getElementById('job-search-type').value = search.job_type || 'any';
+  const deepSearch = document.getElementById('job-deep-search');
+  if (deepSearch) deepSearch.checked = Boolean(search.deep_search);
+  _pendingSavedSearchFilters = search.filters || null;
+}
+
+function restoreSavedSearchFilters(filters) {
+  if (!filters) return;
+  if (filters.sort) document.getElementById('job-search-sort').value = filters.sort;
+  if (filters.japanese) document.getElementById('job-japanese-filter').value = filters.japanese;
+  if (filters.english) document.getElementById('job-english-filter').value = filters.english;
+  if (filters.visa) document.getElementById('job-visa-filter').value = filters.visa;
+  if (filters.safety) document.getElementById('job-safety-filter').value = filters.safety;
+  if (filters.clearance) document.getElementById('job-clearance-filter').value = filters.clearance;
+  const sources = new Set(filters.sources || []);
+  document.querySelectorAll('#job-source-filter input[type="checkbox"]').forEach(input => {
+    input.checked = sources.has(input.value);
+  });
+}
+
+function runSavedSearch(searchId) {
+  const search = getSavedSearches().find(item => item.id === searchId);
+  if (!search) return;
+  restoreSavedSearchFields(search);
+  searchJobs({ savedSearchId: search.id });
+}
+
+function deleteSavedSearch(searchId, event) {
   if (event) event.stopPropagation();
-  const saved = getSavedJobIds();
-  const next = saved.includes(jobId)
-    ? saved.filter(id => id !== jobId)
-    : saved.concat(jobId);
-  setSavedJobIds(next);
-  applyJobFilters();
+  saveSavedSearches(getSavedSearches().filter(search => search.id !== searchId));
+  if (_activeSavedSearchId === searchId) _activeSavedSearchId = '';
+  renderSavedSearches();
+}
+
+function updateSavedSearchAfterRun(jobs) {
+  if (!_activeSavedSearchId) return 0;
+  const searches = getSavedSearches();
+  const search = searches.find(item => item.id === _activeSavedSearchId);
+  if (!search) return 0;
+  const previousKeys = new Set(search.last_result_keys || []);
+  const resultKeys = jobs.map(jobResultKey).filter(Boolean);
+  const newCount = resultKeys.filter(key => !previousKeys.has(key)).length;
+  const state = collectSavedSearchState();
+  Object.assign(search, state, {
+    name: savedSearchName(state),
+    signature: savedSearchSignature(state),
+    last_run_at: Date.now(),
+    last_count: jobs.length,
+    last_result_keys: resultKeys,
+    new_since_last: newCount,
+  });
+  saveSavedSearches(searches);
+  renderSavedSearches();
+  return newCount;
+}
+
+function renderSavedSearches() {
+  const container = document.getElementById('saved-searches-list');
+  if (!container) return;
+  const searches = getSavedSearches();
+  container.innerHTML = '';
+  if (!searches.length) {
+    const empty = document.createElement('span');
+    empty.className = 'saved-search-empty';
+    empty.textContent = t('job-saved-search-empty');
+    container.appendChild(empty);
+    return;
+  }
+
+  searches.slice(0, 6).forEach(search => {
+    const card = document.createElement('div');
+    card.className = `saved-search-card${search.id === _activeSavedSearchId ? ' active' : ''}`;
+
+    const body = document.createElement('button');
+    body.type = 'button';
+    body.className = 'saved-search-main';
+    body.onclick = () => runSavedSearch(search.id);
+
+    const name = document.createElement('strong');
+    name.textContent = search.name || savedSearchName(search);
+    const meta = document.createElement('span');
+    const parts = [];
+    if (search.last_count) parts.push(`${search.last_count} jobs`);
+    if (search.last_run_at) parts.push(`${t('job-last-run')}: ${new Date(search.last_run_at).toLocaleDateString()}`);
+    if (search.new_since_last) parts.push(t('job-new-results').replace('{count}', search.new_since_last));
+    meta.textContent = parts.join(' · ');
+    body.appendChild(name);
+    body.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'saved-search-actions';
+    const runBtn = document.createElement('button');
+    runBtn.type = 'button';
+    runBtn.textContent = t('job-run-search');
+    runBtn.onclick = () => runSavedSearch(search.id);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.textContent = t('job-delete-search');
+    deleteBtn.onclick = event => deleteSavedSearch(search.id, event);
+    actions.appendChild(runBtn);
+    actions.appendChild(deleteBtn);
+
+    card.appendChild(body);
+    card.appendChild(actions);
+    container.appendChild(card);
+  });
 }
 
 function resetJobFilters() {
@@ -1138,10 +1797,9 @@ function resetJobFilters() {
   });
   document.getElementById('job-japanese-filter').value = 'any';
   document.getElementById('job-english-filter').value = 'any';
+  document.getElementById('job-visa-filter').value = 'any';
   document.getElementById('job-safety-filter').value = 'any';
   document.getElementById('job-clearance-filter').value = 'any';
-  document.getElementById('job-salary-only').checked = false;
-  document.getElementById('job-saved-only').checked = false;
   applyJobFilters();
 }
 
@@ -1209,6 +1867,16 @@ function matchesEnglishFilter(job, filterValue) {
   return true;
 }
 
+function matchesVisaFilter(job, filterValue) {
+  if (filterValue === 'any') return true;
+  const sponsorship = (job.visa_sponsorship || '').toLowerCase();
+  if (!sponsorship) return false;
+  if (filterValue === 'available') return sponsorship.includes('available');
+  if (filterValue === 'unavailable') return sponsorship.includes('no visa') || sponsorship.includes('no sponsorship');
+  if (filterValue === 'authorization_required') return sponsorship.includes('authorization required');
+  return true;
+}
+
 function matchesSafetyFilter(job, filterValue) {
   if (filterValue === 'any') return true;
   const minimum = Number(filterValue);
@@ -1230,21 +1898,18 @@ function applyJobFilters(keepSelection = true) {
   const selectedSources = getSelectedJobSources();
   const japaneseFilter = document.getElementById('job-japanese-filter').value;
   const englishFilter = document.getElementById('job-english-filter').value;
+  const visaFilter = document.getElementById('job-visa-filter').value;
   const safetyFilter = document.getElementById('job-safety-filter').value;
   const clearanceFilter = document.getElementById('job-clearance-filter').value;
-  const salaryOnly = document.getElementById('job-salary-only').checked;
-  const savedOnly = document.getElementById('job-saved-only').checked;
-  const savedIds = getSavedJobIds();
 
   let jobs = _allJobSearchResults.filter(job => {
     if (jobType !== 'any' && job.job_type !== jobType) return false;
     if (selectedSources.length && !selectedSources.includes(job.source)) return false;
     if (!matchesJapaneseFilter(job, japaneseFilter)) return false;
     if (!matchesEnglishFilter(job, englishFilter)) return false;
+    if (!matchesVisaFilter(job, visaFilter)) return false;
     if (!matchesSafetyFilter(job, safetyFilter)) return false;
     if (!matchesClearanceFilter(job, clearanceFilter)) return false;
-    if (salaryOnly && !job.salary) return false;
-    if (savedOnly && !savedIds.includes(job.id)) return false;
     return true;
   });
 
@@ -1270,6 +1935,9 @@ function renderJobResults(jobs, meta = {}) {
 
   resultsEl.innerHTML = '';
   summaryEl.textContent = t('job-results-count').replace('{count}', jobs.length);
+  if (Number(meta.new_since_last || 0) > 0) {
+    summaryEl.textContent += ` · ${t('job-new-results').replace('{count}', meta.new_since_last)}`;
+  }
   const sourceParts = [];
   if (meta.source) sourceParts.push(`${t('job-source-label')}: ${meta.source}${meta.cached ? ' cached' : ''}`);
   const sourceLabels = {
@@ -1369,17 +2037,10 @@ function renderJobCard(job) {
   source.className = 'job-source-pill';
   source.textContent = job.source || '';
 
-  const saveBtn = document.createElement('button');
-  saveBtn.className = `btn-save-job${isJobSaved(job.id) ? ' saved' : ''}`;
-  saveBtn.type = 'button';
-  saveBtn.textContent = isJobSaved(job.id) ? t('job-saved') : t('job-save');
-  saveBtn.onclick = event => toggleSavedJob(job.id, event);
-
   header.appendChild(titleGroup);
   const headerActions = document.createElement('div');
   headerActions.className = 'job-card-actions';
   headerActions.appendChild(source);
-  headerActions.appendChild(saveBtn);
   header.appendChild(headerActions);
 
   const meta = document.createElement('div');
@@ -1389,8 +2050,10 @@ function renderJobCard(job) {
   });
   appendJapaneseRequirementBadge(meta, job.japanese_requirement);
   appendEnglishRequirementBadge(meta, job.english_requirement);
+  appendVisaSponsorshipBadge(meta, job.visa_sponsorship);
   appendSecurityClearanceBadge(meta, job.security_clearance);
   appendPublicSafetyBadge(meta, job);
+  appendApplicationStatusBadge(meta, job);
 
   const details = document.createElement('div');
   details.className = 'job-detail-row';
@@ -1403,17 +2066,6 @@ function renderJobCard(job) {
     const salary = document.createElement('span');
     salary.textContent = `${t('job-salary-label')}: ${job.salary}`;
     details.appendChild(salary);
-  }
-  const mapsUrl = googleMapsUrlForJob(job);
-  if (mapsUrl) {
-    const mapsLink = document.createElement('a');
-    mapsLink.className = 'job-map-link';
-    mapsLink.href = mapsUrl;
-    mapsLink.target = '_blank';
-    mapsLink.rel = 'noopener noreferrer';
-    mapsLink.onclick = event => event.stopPropagation();
-    mapsLink.textContent = t('job-open-maps');
-    details.appendChild(mapsLink);
   }
 
   const desc = document.createElement('p');
@@ -1460,15 +2112,8 @@ function renderJobDetail(jobId) {
   const company = document.createElement('p');
   company.textContent = job.company || '';
 
-  const saveBtn = document.createElement('button');
-  saveBtn.className = `btn-save-job detail${isJobSaved(job.id) ? ' saved' : ''}`;
-  saveBtn.type = 'button';
-  saveBtn.textContent = isJobSaved(job.id) ? t('job-saved') : t('job-save');
-  saveBtn.onclick = event => toggleSavedJob(job.id, event);
-
   top.appendChild(title);
   top.appendChild(company);
-  top.appendChild(saveBtn);
 
   const meta = document.createElement('div');
   meta.className = 'job-meta-row detail';
@@ -1477,8 +2122,10 @@ function renderJobDetail(jobId) {
   });
   appendJapaneseRequirementBadge(meta, job.japanese_requirement);
   appendEnglishRequirementBadge(meta, job.english_requirement);
+  appendVisaSponsorshipBadge(meta, job.visa_sponsorship);
   appendSecurityClearanceBadge(meta, job.security_clearance);
   appendPublicSafetyBadge(meta, job);
+  appendApplicationStatusBadge(meta, job);
 
   const details = document.createElement('div');
   details.className = 'job-detail-row';
@@ -1534,6 +2181,7 @@ function renderJobDetail(jobId) {
   panel.appendChild(meta);
   if (details.textContent) panel.appendChild(details);
   panel.appendChild(actions);
+  panel.appendChild(renderApplicationTrackerEditor(job));
   panel.appendChild(hint);
   panel.appendChild(descTitle);
   panel.appendChild(desc);
@@ -1612,6 +2260,7 @@ function applyHydratedJobDescription(job, data) {
   job.description_source = data.description_source || 'detail-page';
   if (data.japanese_requirement) job.japanese_requirement = data.japanese_requirement;
   if (data.english_requirement) job.english_requirement = data.english_requirement;
+  if (data.visa_sponsorship) job.visa_sponsorship = data.visa_sponsorship;
   if (data.security_clearance) job.security_clearance = data.security_clearance;
   if (data.public_safety_score) {
     job.public_safety_score = data.public_safety_score;
@@ -1757,6 +2406,16 @@ function appendEnglishRequirementBadge(container, requirement) {
   appendJobMetaBadge(container, requirement, className);
 }
 
+function appendVisaSponsorshipBadge(container, sponsorship) {
+  if (!sponsorship) return;
+  const lower = sponsorship.toLowerCase();
+  if (lower.includes('no visa') || lower.includes('no sponsorship')) return;
+  const className = lower.includes('available')
+    ? 'visa-available'
+    : 'visa-required';
+  appendJobMetaBadge(container, sponsorship, className);
+}
+
 function appendSecurityClearanceBadge(container, clearance) {
   if (!clearance) return;
   appendJobMetaBadge(container, clearance, 'security-clearance');
@@ -1791,6 +2450,7 @@ function formatJobPosting(job) {
     prettyJobType(job.job_type) ? `Job Type: ${prettyJobType(job.job_type)}` : '',
     job.japanese_requirement ? `Japanese Requirement: ${job.japanese_requirement}` : '',
     job.english_requirement ? `English Requirement: ${job.english_requirement}` : '',
+    job.visa_sponsorship ? `Visa Sponsorship: ${job.visa_sponsorship}` : '',
     job.security_clearance ? `Security Clearance: ${job.security_clearance}` : '',
     publicSafety ? `Public Safety: ${publicSafety}` : '',
     job.salary ? `Salary: ${job.salary}` : '',
@@ -1804,6 +2464,8 @@ async function useJobPosting(jobId) {
     _allJobSearchResults.find(item => item.id === jobId);
   if (!job) return;
   await hydrateJobDescription(jobId);
+  _activeTrackedJobKey = stableJobKey(job);
+  upsertApplicationForJob(job, { status: getApplicationForJob(job)?.status || 'interested' });
   _resetRightPanel();
   document.getElementById('job-description').value = formatJobPosting(job);
   switchMainTab('builder');
@@ -1929,7 +2591,13 @@ async function generateResume() {
 
     _lastResumeData = data.resume;
     showResults(data.downloads, data.resume);
-    addToHistory(candidate, jobDescription, data.resume, data.downloads, data.file_id);
+    const historyId = addToHistory(candidate, jobDescription, data.resume, data.downloads, data.file_id);
+    if (_activeTrackedJobKey) {
+      const trackedJob = _allJobSearchResults.find(job => stableJobKey(job) === _activeTrackedJobKey);
+      if (trackedJob) {
+        upsertApplicationForJob(trackedJob, { resume_history_id: historyId });
+      }
+    }
 
     // Reveal cover letter & interview prep buttons
     document.getElementById('btn-cover-letter').classList.remove('hidden');
@@ -2163,6 +2831,7 @@ function addToHistory(candidate, jobDescription, resumeData, downloads, fileId) 
   if (history.length > 20) history.length = 20; // keep last 20
   saveHistory(history);
   renderHistory();
+  return entry.id;
 }
 
 function renderHistory() {
@@ -2384,6 +3053,8 @@ window.addEventListener('DOMContentLoaded', () => {
   _populateForm(profiles[activeId]?.data || {});
 
   renderHistory();
+  renderSavedSearches();
+  renderApplicationTrackerPanel();
 
   // Merge profiles from server-side profiles/ directory into localStorage
   fetch('/auto-load-profile')

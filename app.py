@@ -6,6 +6,7 @@ import json
 import time as _time
 import logging
 import threading
+import queue
 import pypdf
 from docx import Document as DocxDocument
 from flask import Flask, render_template, request, jsonify, send_file, abort
@@ -50,6 +51,12 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 VALID_TEMPLATES = frozenset({'modern', 'classic', 'minimal', 'japanese', 'taiwanese'})
 VALID_LANGUAGES  = frozenset({'english', 'japanese', 'taiwanese'})
 _SAFE_NAME = re.compile(r'^(cl_)?[a-f0-9]+\.(docx|pdf|md|html)$')
+JOB_SEARCH_TTL = 30 * 60
+JOB_SEARCH_QUEUE_MAX = 20
+JOB_SEARCH_WORKERS = 2
+_job_search_queue = queue.Queue(maxsize=JOB_SEARCH_QUEUE_MAX)
+_job_search_jobs = {}
+_job_search_lock = threading.Lock()
 
 def _v(val, allowed, default):
     """Return val if it's in the allowed set, else default."""
@@ -67,14 +74,82 @@ def _cleanup_output_dir():
             pass
 
 
+def _cleanup_job_search_jobs():
+    cutoff = _time.time() - JOB_SEARCH_TTL
+    with _job_search_lock:
+        expired = [
+            job_id for job_id, job in _job_search_jobs.items()
+            if job.get('updated_at', job.get('created_at', 0)) < cutoff
+        ]
+        for job_id in expired:
+            _job_search_jobs.pop(job_id, None)
+
+
+def _job_search_snapshot(job_id: str) -> dict | None:
+    with _job_search_lock:
+        job = _job_search_jobs.get(job_id)
+        return dict(job) if job else None
+
+
+def _set_job_search_state(job_id: str, **updates):
+    with _job_search_lock:
+        job = _job_search_jobs.get(job_id)
+        if not job:
+            return
+        job.update(updates)
+        job['updated_at'] = _time.time()
+
+
+def _job_search_worker():
+    while True:
+        job_id = _job_search_queue.get()
+        try:
+            job = _job_search_snapshot(job_id)
+            if not job or job.get('cancel_requested'):
+                _set_job_search_state(job_id, status='cancelled', progress='Cancelled')
+                continue
+            params = job.get('params') or {}
+            _set_job_search_state(job_id, status='running', progress='Searching job sources')
+            result = run_job_search(
+                params.get('title', ''),
+                params.get('country', 'any'),
+                params.get('location', ''),
+                params.get('job_type', 'any'),
+                deep_search=bool(params.get('deep_search')),
+            )
+            latest = _job_search_snapshot(job_id)
+            if latest and latest.get('cancel_requested'):
+                _set_job_search_state(job_id, status='cancelled', progress='Cancelled')
+            else:
+                _set_job_search_state(
+                    job_id,
+                    status='completed',
+                    progress='Complete',
+                    result=result,
+                )
+        except Exception as exc:
+            logger.exception('Background job search failed')
+            _set_job_search_state(
+                job_id,
+                status='failed',
+                progress='Failed',
+                error=str(exc)[:500] or 'Search failed.',
+            )
+        finally:
+            _job_search_queue.task_done()
+
+
 def _cleanup_worker():
     while True:
         _time.sleep(3600)
         _cleanup_output_dir()
+        _cleanup_job_search_jobs()
 
 
 _cleanup_output_dir()
 threading.Thread(target=_cleanup_worker, daemon=True).start()
+for _ in range(JOB_SEARCH_WORKERS):
+    threading.Thread(target=_job_search_worker, daemon=True).start()
 
 
 @app.after_request
@@ -160,7 +235,72 @@ def search_jobs():
     location = str(request.args.get('location', '')).strip()[:120]
     job_type = _v(str(request.args.get('job_type', 'any')).strip(), VALID_JOB_TYPES, 'any')
     deep_search = str(request.args.get('deep_search', '')).lower() in ('1', 'true', 'yes', 'on')
-    return jsonify(run_job_search(title, country, location, job_type, deep_search=deep_search))
+    job_id = uuid.uuid4().hex
+    payload = {
+        'id': job_id,
+        'status': 'queued',
+        'progress': 'Queued',
+        'params': {
+            'title': title,
+            'country': country,
+            'location': location,
+            'job_type': job_type,
+            'deep_search': deep_search,
+        },
+        'created_at': _time.time(),
+        'updated_at': _time.time(),
+        'cancel_requested': False,
+    }
+    try:
+        with _job_search_lock:
+            _job_search_jobs[job_id] = payload
+        _job_search_queue.put_nowait(job_id)
+    except queue.Full:
+        with _job_search_lock:
+            _job_search_jobs.pop(job_id, None)
+        return jsonify({'success': False, 'error': 'Job search queue is full. Try again in a minute.'}), 429
+    return jsonify({'success': True, 'queued': True, 'job_id': job_id, 'status': 'queued', 'progress': 'Queued'}), 202
+
+
+@app.route('/search-jobs/<job_id>')
+@limiter.limit('120 per hour')
+def search_jobs_status(job_id):
+    if not re.fullmatch(r'[a-f0-9]{32}', job_id or ''):
+        return jsonify({'success': False, 'error': 'Invalid job id'}), 400
+    job = _job_search_snapshot(job_id)
+    if not job:
+        return jsonify({'success': False, 'error': 'Search job not found or expired'}), 404
+    response = {
+        'success': True,
+        'job_id': job_id,
+        'status': job.get('status', 'queued'),
+        'progress': job.get('progress', ''),
+    }
+    if job.get('status') == 'completed':
+        response.update(job.get('result') or {})
+        response['job_id'] = job_id
+        response['status'] = 'completed'
+    elif job.get('status') == 'failed':
+        response['success'] = False
+        response['error'] = job.get('error') or 'Search failed.'
+    return jsonify(response)
+
+
+@app.route('/search-jobs/<job_id>/cancel', methods=['POST'])
+@limiter.limit('60 per hour')
+def cancel_search_jobs(job_id):
+    if not re.fullmatch(r'[a-f0-9]{32}', job_id or ''):
+        return jsonify({'success': False, 'error': 'Invalid job id'}), 400
+    with _job_search_lock:
+        job = _job_search_jobs.get(job_id)
+        if not job:
+            return jsonify({'success': False, 'error': 'Search job not found or expired'}), 404
+        job['cancel_requested'] = True
+        job['status'] = 'cancelled'
+        job['progress'] = 'Cancelled'
+        job['updated_at'] = _time.time()
+        status = job.get('status')
+    return jsonify({'success': True, 'job_id': job_id, 'status': status})
 
 
 @app.route('/job-detail-description', methods=['POST'])
